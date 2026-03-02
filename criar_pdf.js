@@ -129,18 +129,25 @@ y += 10;
 // LINK TEMPORARIO
 txt('ACESSO TEMPORARIO (Vercel)', margin, y, 11, true, azul);
 y += 6;
-txt('Link enquanto desenvolve (sera deletado apos liberar):', margin, y, 9);
-y += 6;
-txt('_____________________________________________________________________', margin + 5, y, 9);
-y += 10;
+txt('Link para acessar agora:', margin, y, 9);
+y += 5;
+txt('https://clube-gilt-mu.vercel.app/', margin + 5, y, 9);
+y += 7;
+
+txt('Credenciais de acesso:', margin, y, 9);
+y += 5;
+txt('Login: master@clubedovidro.com.br', margin + 5, y, 9);
+y += 4;
+txt('Senha: clubedovidro1234', margin + 5, y, 9);
+y += 8;
 
 // CODIGO
 txt('CODIGO DO PROJETO (Drive)', margin, y, 11, true, azul);
 y += 6;
 txt('Link Google Drive com todo o codigo:', margin, y, 9);
-y += 6;
-txt('_____________________________________________________________________', margin + 5, y, 9);
-y += 12;
+y += 5;
+txt('https://drive.google.com/file/d/1YVjYU5TfGcqIqSyPaxGIfkZBEk9xgttM/view', margin + 5, y, 9);
+y += 10;
 
 // LINHA
 doc.setDrawColor(...azul);
@@ -205,10 +212,11 @@ y += 8;
 // FOOTER
 doc.setFontSize(8);
 doc.setTextColor(100, 100, 100);
-doc.text('NexosDigital - Solucoes Digitais', w/2, h - 8, { align: 'center' });
+doc.text('NexosDigital - Solucoes Digitais', w/2, h - 10, { align: 'center' });
+doc.text('Roque Rafael Proenca - LinkedIn', w/2, h - 6, { align: 'center' });
 
 const data = new Date().toLocaleDateString('pt-BR');
-doc.text('Documento gerado em ' + data, w/2, h - 4, { align: 'center' });
+doc.text('Documento gerado em ' + data, w/2, h - 2, { align: 'center' });
 
 // SALVAR
 const outputPath = path.join(process.cwd(), 'Nota_de_Servico_ClubeDoVidro.pdf');

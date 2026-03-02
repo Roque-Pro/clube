@@ -243,8 +243,8 @@ const Landing = () => {
                 >
                     <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                         <img
-                            src="/src/img/iguacu_vidros.PNG"
-                            alt="Iguaçu Auto Vidros - Filial"
+                            src="/img/iguacu_vidros.PNG"
+                            alt="Iguacu Auto Vidros - Filial"
                             className="w-full h-auto object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
