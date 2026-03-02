@@ -1,0 +1,16 @@
+project_id = "ozueuuttwanidhvykpkx"
+
+[functions.admin-users]
+verify_jwt = false
+
+[functions.update-employee-password]
+verify_jwt = false
+
+[functions.create-employee-auth]
+verify_jwt = false
+
+[functions.delete-employee-auth]
+verify_jwt = false
+
+[functions.update-client-password]
+verify_jwt = false
