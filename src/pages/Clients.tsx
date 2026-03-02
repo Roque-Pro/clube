@@ -531,79 +531,88 @@ const Clients = () => {
                 transition={{ delay: i * 0.05 }}
                 className="glass-card p-5"
               >
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${client.active && !isExpired ? "bg-success/15" : "bg-destructive/15"}`}>
-                      {client.active && !isExpired ? <UserCheck className="w-5 h-5 text-success" /> : <UserX className="w-5 h-5 text-destructive" />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-foreground truncate">{client.name}</p>
-                      <p className="text-sm text-muted-foreground">{client.vehicle} • {client.plate}</p>
-                    </div>
-                  </div>
+                <div className="space-y-4">
+                   <div className="flex items-center gap-4">
+                     <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${client.active && !isExpired ? "bg-success/15" : "bg-destructive/15"}`}>
+                       {client.active && !isExpired ? <UserCheck className="w-5 h-5 text-success" /> : <UserX className="w-5 h-5 text-destructive" />}
+                     </div>
+                     <div className="min-w-0 flex-1">
+                       <p className="font-semibold text-foreground truncate">{client.name}</p>
+                       <p className="text-sm text-muted-foreground">{client.vehicle} • {client.plate}</p>
+                     </div>
+                   </div>
 
-                  <div className="flex items-center gap-6 flex-wrap">
-                    <div className="text-center">
-                      <p className="text-xs text-muted-foreground">Telefone</p>
-                      <p className="text-sm text-foreground">{client.phone}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-muted-foreground">Plano até</p>
-                      <p className={`text-sm font-medium ${isExpired ? "text-destructive" : "text-foreground"}`}>
-                        {planEnd.toLocaleDateString("pt-BR")}
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-muted-foreground">Trocas</p>
-                      <div className="flex gap-1 mt-1">
-                        {Array.from({ length: client.maxReplacements }).map((_, i) => {
-                          let bgColor = "bg-slate-400"; // Cinza apagado quando plano desativado
-                          if (client.planActive) {
-                            if (i < client.replacementsUsed) {
-                              bgColor = client.replacementsUsed === client.maxReplacements ? "bg-destructive" : "bg-red-500"; // Vermelho conforme usa
-                            } else {
-                              bgColor = "bg-primary"; // Azul quando disponível
-                            }
-                          }
-                          return <div key={i} className={`w-3 h-3 rounded-full ${bgColor}`} />;
-                        })}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant={client.planActive ? "outline" : "destructive"}
-                      className="gap-1"
-                      onClick={() => togglePlanActive(client)}
-                    >
-                      {client.planActive ? "Plano Ativo" : "Plano Inativo"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="gap-1"
-                      onClick={() => { setViewedClient(client); setViewDialogOpen(true); }}
-                    >
-                      <Eye className="w-4 h-4" /> Visualizar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="gap-1"
-                      onClick={() => openEditDialog(client)}
-                    >
-                      <Edit2 className="w-4 h-4" /> Editar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-1 border-primary/30 text-primary hover:bg-primary/10"
-                      disabled={client.replacementsUsed >= client.maxReplacements || isExpired || !client.planActive}
-                      onClick={() => { setSelectedClient(client); setReplDialogOpen(true); }}
-                    >
-                      <Repeat className="w-4 h-4" /> Registrar Troca
-                    </Button>
-                  </div>
-                </div>
+                   <div className="grid grid-cols-3 md:grid-cols-4 gap-3 md:gap-6">
+                     <div className="text-center">
+                       <p className="text-xs text-muted-foreground">Telefone</p>
+                       <p className="text-xs md:text-sm text-foreground truncate">{client.phone}</p>
+                     </div>
+                     <div className="text-center">
+                       <p className="text-xs text-muted-foreground">Plano até</p>
+                       <p className={`text-xs md:text-sm font-medium ${isExpired ? "text-destructive" : "text-foreground"}`}>
+                         {planEnd.toLocaleDateString("pt-BR")}
+                       </p>
+                     </div>
+                     <div className="text-center">
+                       <p className="text-xs text-muted-foreground">Trocas</p>
+                       <div className="flex gap-1 mt-1 justify-center">
+                         {Array.from({ length: client.maxReplacements }).map((_, i) => {
+                           let bgColor = "bg-slate-400";
+                           if (client.planActive) {
+                             if (i < client.replacementsUsed) {
+                               bgColor = client.replacementsUsed === client.maxReplacements ? "bg-destructive" : "bg-red-500";
+                             } else {
+                               bgColor = "bg-primary";
+                             }
+                           }
+                           return <div key={i} className={`w-2 h-2 md:w-3 md:h-3 rounded-full ${bgColor}`} />;
+                         })}
+                       </div>
+                     </div>
+                     <div className="text-center hidden md:block">
+                       <p className="text-xs text-muted-foreground">Status</p>
+                       <p className={`text-xs md:text-sm font-medium ${client.planActive ? "text-success" : "text-destructive"}`}>
+                         {client.planActive ? "Ativo" : "Inativo"}
+                       </p>
+                     </div>
+                   </div>
+
+                   <div className="flex flex-wrap gap-2 md:gap-3">
+                     <Button
+                       size="sm"
+                       variant={client.planActive ? "outline" : "destructive"}
+                       className="gap-1 text-xs md:text-sm flex-1 md:flex-none"
+                       onClick={() => togglePlanActive(client)}
+                     >
+                       {client.planActive ? "Ativo" : "Inativo"}
+                     </Button>
+                     <Button
+                       size="sm"
+                       variant="ghost"
+                       className="gap-1 text-xs md:text-sm flex-1 md:flex-none"
+                       onClick={() => { setViewedClient(client); setViewDialogOpen(true); }}
+                     >
+                       <Eye className="w-4 h-4" /> Ver
+                     </Button>
+                     <Button
+                       size="sm"
+                       variant="ghost"
+                       className="gap-1 text-xs md:text-sm flex-1 md:flex-none"
+                       onClick={() => openEditDialog(client)}
+                     >
+                       <Edit2 className="w-4 h-4" /> Editar
+                     </Button>
+                     <Button
+                       size="sm"
+                       variant="outline"
+                       className="gap-1 text-xs md:text-sm flex-1 md:flex-none border-primary/30 text-primary hover:bg-primary/10"
+                       disabled={client.replacementsUsed >= client.maxReplacements || isExpired || !client.planActive}
+                       onClick={() => { setSelectedClient(client); setReplDialogOpen(true); }}
+                     >
+                       <Repeat className="w-4 h-4" /> Troca
+                     </Button>
+                   </div>
+                 </div>
               </motion.div>
             );
           })}

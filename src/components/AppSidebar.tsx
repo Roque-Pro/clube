@@ -3,7 +3,11 @@ import { LayoutDashboard, Users, Package, UserCog, History, Shield, LogOut, Sett
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
-const AppSidebar = () => {
+interface AppSidebarProps {
+  onClose?: () => void;
+}
+
+const AppSidebar = ({ onClose }: AppSidebarProps) => {
   const location = useLocation();
   const { user, isAdmin, signOut } = useAuth();
 
@@ -17,7 +21,7 @@ const AppSidebar = () => {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
+    <aside className="h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3">

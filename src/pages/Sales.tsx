@@ -282,36 +282,36 @@ const Sales = () => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
           {/* Total de Vendas */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card p-6 rounded-lg border border-success/20"
+            className="glass-card p-4 md:p-6 rounded-lg border border-success/20"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Total em Vendas</p>
-                <div className="flex items-center gap-3">
-                  <p className="text-3xl font-bold text-success">
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className="flex-1">
+                <p className="text-xs md:text-sm text-muted-foreground mb-1">Total em Vendas</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-lg md:text-3xl font-bold text-success">
                     {showValues ? `R$ ${totalSales.toFixed(2)}` : "••••••"}
                   </p>
                   <button
                     onClick={() => setShowValues(!showValues)}
-                    className="p-2 hover:bg-success/20 rounded-lg transition-colors"
+                    className="p-1 hover:bg-success/20 rounded transition-colors flex-shrink-0"
                     title={showValues ? "Esconder valores" : "Mostrar valores"}
                   >
                     {showValues ? (
-                      <Eye className="w-5 h-5 text-success" />
+                      <Eye className="w-4 h-4 md:w-5 md:h-5 text-success" />
                     ) : (
-                      <EyeOff className="w-5 h-5 text-muted-foreground" />
+                      <EyeOff className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
                     )}
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">{sales.length} transações</p>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-success/20 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-success" />
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-success/20 flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-success" />
               </div>
             </div>
           </motion.div>
@@ -321,30 +321,31 @@ const Sales = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="glass-card p-6 rounded-lg border border-primary/20"
+            className="glass-card p-4 md:p-6 rounded-lg border border-primary/20"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Produtos em Estoque</p>
-                <p className="text-3xl font-bold text-primary">{products.length}</p>
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className="flex-1">
+                <p className="text-xs md:text-sm text-muted-foreground mb-1">Produtos</p>
+                <p className="text-lg md:text-3xl font-bold text-primary">{products.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Total: {products.reduce((sum, p) => sum + p.quantity, 0)} unidades
+                  {products.reduce((sum, p) => sum + p.quantity, 0)} unidades
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
-                <ShoppingCart className="w-6 h-6 text-primary" />
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
             </div>
           </motion.div>
         </div>
 
         {/* New Sale Button */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 w-full md:w-auto">
                 <Plus className="w-4 h-4" />
-                Registrar Venda
+                <span className="hidden md:inline">Registrar Venda</span>
+                <span className="md:hidden">Nova Venda</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -479,40 +480,37 @@ const Sales = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-sm">
                 <thead>
                    <tr className="border-b border-border">
-                     <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground">Data</th>
-                     <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground">Produto</th>
-                     <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground">Valor</th>
-                     <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground">Pagamento</th>
-                     <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground">Observações</th>
-                     <th className="px-6 py-3 text-center text-xs font-semibold text-muted-foreground">Ações</th>
+                     <th className="px-3 md:px-6 py-3 text-left text-xs font-semibold text-muted-foreground">Data</th>
+                     <th className="px-3 md:px-6 py-3 text-left text-xs font-semibold text-muted-foreground hidden sm:table-cell">Produto</th>
+                     <th className="px-3 md:px-6 py-3 text-left text-xs font-semibold text-muted-foreground">Valor</th>
+                     <th className="px-3 md:px-6 py-3 text-left text-xs font-semibold text-muted-foreground hidden md:table-cell">Pagamento</th>
+                     <th className="px-3 md:px-6 py-3 text-center text-xs font-semibold text-muted-foreground">Ações</th>
                    </tr>
                  </thead>
                 <tbody>
                   {sales.map((sale) => (
-                    <tr key={sale.id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                      <td className="px-6 py-3 text-sm text-foreground">
+                    <tr key={sale.id} className="border-b border-border hover:bg-muted/50 transition-colors text-xs md:text-sm">
+                      <td className="px-3 md:px-6 py-3 text-foreground">
                         {new Date(sale.sale_date).toLocaleDateString("pt-BR", {
-                          year: "numeric",
                           month: "2-digit",
                           day: "2-digit",
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
                       </td>
-                      <td className="px-6 py-3 text-sm text-foreground">{sale.description}</td>
-                      <td className="px-6 py-3 text-sm font-semibold text-success">
+                      <td className="px-3 md:px-6 py-3 text-foreground hidden sm:table-cell truncate">{sale.description}</td>
+                      <td className="px-3 md:px-6 py-3 font-semibold text-success">
                         {showValues ? `R$ ${Number(sale.amount).toFixed(2)}` : "••••••"}
                       </td>
-                      <td className="px-6 py-3 text-sm text-foreground">
-                        {sale.payment_method === "dinheiro" && "💵 Dinheiro"}
-                        {sale.payment_method === "pix" && "📱 PIX"}
-                        {sale.payment_method === "cartao" && "💳 Cartão"}
+                      <td className="px-3 md:px-6 py-3 text-foreground hidden md:table-cell">
+                        {sale.payment_method === "dinheiro" && "💵"}
+                        {sale.payment_method === "pix" && "📱"}
+                        {sale.payment_method === "cartao" && "💳"}
                       </td>
-                      <td className="px-6 py-3 text-sm text-muted-foreground">{sale.notes || "-"}</td>
-                      <td className="px-6 py-3 text-center">
+                      <td className="px-3 md:px-6 py-3 text-center">
                         <button
                             onClick={() => {
                               setGeneratingReceipt(sale.id);

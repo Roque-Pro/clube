@@ -389,20 +389,20 @@ const Servicos = () => {
         <div>
             <PageHeader title="Serviços" description="Agendamentos e índices de desempenho" />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                 {/* LADO ESQUERDO - AGENDAMENTOS */}
                 <div className="space-y-6">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0 }}
-                        className="glass-card p-6 rounded-lg border border-border"
+                        className="glass-card p-4 md:p-6 rounded-lg border border-border"
                     >
-                        <h2 className="text-lg font-display font-semibold text-foreground mb-4 flex items-center gap-2">
+                        <h2 className="text-base md:text-lg font-display font-semibold text-foreground mb-4 flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-primary" />
-                            Agendamentos Pendentes
+                            Agendamentos
                         </h2>
-                        <div className="space-y-3 max-h-screen overflow-y-auto">
+                        <div className="space-y-3 max-h-96 md:max-h-screen overflow-y-auto">
                             {appointments.length === 0 ? (
                                 <p className="text-sm text-muted-foreground text-center py-4">Nenhum agendamento pendente</p>
                             ) : (
@@ -414,17 +414,17 @@ const Servicos = () => {
                                         const borderColor = apt.status === "pendente" ? "border-amber-500" : apt.status === "confirmado" ? "border-blue-500" : "border-green-500";
                                         const bgColor = apt.status === "pendente" ? "bg-amber-50 dark:bg-amber-950/20" : apt.status === "confirmado" ? "bg-blue-50 dark:bg-blue-950/20" : "bg-green-50 dark:bg-green-950/20";
                                         return (
-                                        <div key={apt.id} className={`p-3 rounded-lg ${bgColor} hover:opacity-80 transition-all border-l-4 ${borderColor}`}>
+                                        <div key={apt.id} className={`p-2 md:p-3 rounded-lg ${bgColor} hover:opacity-80 transition-all border-l-4 ${borderColor}`}>
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="flex-1">
-                                                    <p className="text-sm font-medium text-foreground">{apt.client_name}</p>
-                                                    <p className="text-xs text-muted-foreground mt-1">📋 {apt.service_type}</p>
+                                                    <p className="text-sm font-medium text-foreground truncate">{apt.client_name}</p>
+                                                    <p className="text-xs text-muted-foreground">📋 {apt.service_type}</p>
                                                     {apt.notes && <p className="text-xs text-muted-foreground mt-1">💬 {apt.notes}</p>}
                                                     <p className="text-xs text-muted-foreground mt-1">
                                                         📅 {new Date(apt.scheduled_date).toLocaleDateString("pt-BR")} ⏰ {apt.scheduled_time}
                                                     </p>
                                                 </div>
-                                                <div className="flex flex-col gap-1">
+                                                <div className="flex flex-col gap-1 flex-shrink-0">
                                                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${apt.status === "pendente" ? "bg-amber-100 text-amber-700" : apt.status === "confirmado" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
                                                         {apt.status === "pendente" ? "⏳ Pendente" : apt.status === "confirmado" ? "⏱️ Confirmado" : "✓ Concluído"}
                                                     </span>
@@ -460,35 +460,35 @@ const Servicos = () => {
                 </div>
 
                 {/* LADO DIREITO - ÍNDICES DE SERVIÇOS */}
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                     {/* Cards de Resumo */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2 md:gap-3">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="glass-card p-4 rounded-lg border border-border relative"
+                            className="glass-card p-3 md:p-4 rounded-lg border border-border relative"
                         >
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                     <p className="text-xs text-muted-foreground mb-1">Total de Serviços</p>
-                                    <p className="text-2xl font-bold text-primary">{totalServices}</p>
+                                    <p className="text-xl md:text-2xl font-bold text-primary">{totalServices}</p>
                                     <p className="text-xs text-muted-foreground mt-1">Hoje - {new Date().toLocaleDateString("pt-BR")}</p>
                                 </div>
                                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                                     <DialogTrigger asChild>
                                         <Button
                                             size="sm"
-                                            className="ml-2 h-8 w-8 p-0 bg-primary hover:bg-primary/80"
+                                            className="h-8 w-8 p-0 bg-primary hover:bg-primary/80 flex-shrink-0 ml-2"
                                         >
                                             <Plus className="w-4 h-4" />
                                         </Button>
-                                        </DialogTrigger>
+                                    </DialogTrigger>
                                     <DialogContent className="bg-card border-border">
                                         <DialogHeader>
                                             <DialogTitle className="font-display">Registrar Novo Serviço</DialogTitle>
                                         </DialogHeader>
-                                    <div className="space-y-4">
+                                        <div className="space-y-4">
                                         <div>
                                             <Label>Tipo de Cliente *</Label>
                                             <Select value={serviceForm.clientType} onValueChange={(v) => setServiceForm({ ...serviceForm, clientType: v as "plano" | "avulso", clientId: "", clientName: "", clientVehicle: "", clientPlate: "" })}>
@@ -613,9 +613,9 @@ const Servicos = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="glass-card p-4 rounded-lg border border-border"
+                            className="glass-card p-3 md:p-4 rounded-lg border border-border"
                         >
-                            <h3 className="text-lg font-display font-semibold text-foreground mb-4">🏆 Top Hoje</h3>
+                            <h3 className="text-base md:text-lg font-display font-semibold text-foreground mb-3">🏆 Top</h3>
                             <div className="space-y-2">
                                 {top3EmployeesToday.length === 0 ? (
                                     <p className="text-xs text-muted-foreground text-center py-2">Nenhum serviço hoje</p>
@@ -644,9 +644,9 @@ const Servicos = () => {
                          initial={{ opacity: 0, y: 20 }}
                          animate={{ opacity: 1, y: 0 }}
                          transition={{ delay: 0.3 }}
-                         className="glass-card p-6 rounded-lg border border-border"
+                         className="glass-card p-3 md:p-6 rounded-lg border border-border"
                         >
-                         <h3 className="text-lg font-display font-semibold text-foreground mb-4">🏆 Top Total</h3>
+                         <h3 className="text-base md:text-lg font-display font-semibold text-foreground mb-3 md:mb-4">🏆 Geral</h3>
 
                         <div className="space-y-3">
                             {top3Employees.map((employee, idx) => (

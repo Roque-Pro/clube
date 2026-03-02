@@ -12,15 +12,15 @@ const PageHeader = ({ title, description, actions }: PageHeaderProps) => {
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center justify-between mb-8"
+      className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0 mb-6 md:mb-8"
     >
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">{title}</h1>
+      <div className="min-w-0">
+        <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">{title}</h1>
         {description && (
-          <p className="text-muted-foreground mt-1">{description}</p>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">{description}</p>
         )}
       </div>
-      {actions && <div className="flex gap-3">{actions}</div>}
+      {actions && <div className="flex gap-2 md:gap-3 flex-wrap md:flex-nowrap">{actions}</div>}
     </motion.div>
   );
 };
