@@ -255,8 +255,9 @@ const Inventory = () => {
       </div>
 
       {/* Table */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card overflow-hidden">
-        <table className="w-full">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-max">
           <thead>
             <tr className="border-b border-border">
               <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produto</th>
@@ -320,7 +321,8 @@ const Inventory = () => {
               })}
             </AnimatePresence>
           </tbody>
-        </table>
+          </table>
+        </div>
       </motion.div>
 
       {products.length === 0 && (

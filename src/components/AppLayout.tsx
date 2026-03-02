@@ -53,7 +53,7 @@ const AppLayout = () => {
       </div>
 
       {/* Main Content */}
-      <main className="min-h-screen md:p-8 p-4 pt-20 md:pt-8">
+      <main className="min-h-screen md:p-8 p-4 pt-20 md:pt-8 pb-8">
         <Outlet />
       </main>
     </div>

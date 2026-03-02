@@ -811,84 +811,86 @@ const AdminPanel = () => {
             />
 
             {/* Abas */}
-            <div className="mb-6 flex gap-2 border-b border-border">
-              <button
-                onClick={() => setActiveTab("employees")}
-                className={cn(
-                  "px-4 py-2 font-medium border-b-2 transition-colors",
-                  activeTab === "employees"
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Funcionários
-              </button>
-              <button
-                onClick={() => setActiveTab("inventory")}
-                className={cn(
-                  "px-4 py-2 font-medium border-b-2 transition-colors",
-                  activeTab === "inventory"
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Inventário
-              </button>
-              <button
-                onClick={() => setActiveTab("patrimonio")}
-                className={cn(
-                  "px-4 py-2 font-medium border-b-2 transition-colors",
-                  activeTab === "patrimonio"
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Patrimônio
-              </button>
-              <button
-                onClick={() => setActiveTab("financial")}
-                className={cn(
-                  "px-4 py-2 font-medium border-b-2 transition-colors",
-                  activeTab === "financial"
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Financeiro
-              </button>
-              <button
-                onClick={() => setActiveTab("comissoes")}
-                className={cn(
-                  "px-4 py-2 font-medium border-b-2 transition-colors",
-                  activeTab === "comissoes"
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Comissões de Vendedores
-              </button>
+            <div className="mb-6 overflow-x-auto">
+              <div className="flex gap-2 border-b border-border min-w-max">
+                <button
+                  onClick={() => setActiveTab("employees")}
+                  className={cn(
+                    "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
+                    activeTab === "employees"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Funcionários
+                </button>
+                <button
+                  onClick={() => setActiveTab("inventory")}
+                  className={cn(
+                    "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
+                    activeTab === "inventory"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Inventário
+                </button>
+                <button
+                  onClick={() => setActiveTab("patrimonio")}
+                  className={cn(
+                    "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
+                    activeTab === "patrimonio"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Patrimônio
+                </button>
+                <button
+                  onClick={() => setActiveTab("financial")}
+                  className={cn(
+                    "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
+                    activeTab === "financial"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Financeiro
+                </button>
+                <button
+                  onClick={() => setActiveTab("comissoes")}
+                  className={cn(
+                    "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
+                    activeTab === "comissoes"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Comissões
+                </button>
               </div>
+            </div>
 
             {/* SEÇÃO FUNCIONÁRIOS */}
             {activeTab === "employees" && (
                 <div>
                     {/* CARDS DE ÍNDICES DE DESEMPENHO */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-6 md:mb-8">
                         {/* Total de Funcionários */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="glass-card p-6 rounded-lg border border-border"
+                            className="glass-card p-3 md:p-6 rounded-lg border border-border"
                         >
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                                 <div>
-                                    <p className="text-sm text-muted-foreground mb-1">Total de Funcionários</p>
-                                    <p className="text-3xl font-bold text-primary">{totalEmployees}</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Equipe completa</p>
+                                    <p className="text-xs md:text-sm text-muted-foreground mb-1">Funcionários</p>
+                                    <p className="text-lg md:text-3xl font-bold text-primary">{totalEmployees}</p>
+                                    <p className="text-xs text-muted-foreground mt-1 hidden md:block">Equipe completa</p>
                                 </div>
-                                <div className="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center">
-                                    <UserCog className="w-6 h-6 text-primary" />
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+                                    <UserCog className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                                 </div>
                             </div>
                         </motion.div>
@@ -898,16 +900,16 @@ const AdminPanel = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="glass-card p-6 rounded-lg border border-border"
+                            className="glass-card p-3 md:p-6 rounded-lg border border-border"
                         >
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                                 <div>
-                                    <p className="text-sm text-muted-foreground mb-1">Total de Vendas</p>
-                                    <p className="text-3xl font-bold text-green-500">{totalSalesCount}</p>
-                                    {topSeller && <p className="text-xs text-muted-foreground mt-1">Top: {topSeller.name}</p>}
+                                    <p className="text-xs md:text-sm text-muted-foreground mb-1">Vendas</p>
+                                    <p className="text-lg md:text-3xl font-bold text-green-500">{totalSalesCount}</p>
+                                    {topSeller && <p className="text-xs text-muted-foreground mt-1 hidden md:block">Top: {topSeller.name}</p>}
                                 </div>
-                                <div className="w-12 h-12 rounded-lg bg-green-500/15 flex items-center justify-center">
-                                    <TrendingDown className="w-6 h-6 text-green-500" />
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-green-500/15 flex items-center justify-center flex-shrink-0">
+                                    <TrendingDown className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
                                 </div>
                             </div>
                         </motion.div>
@@ -917,16 +919,16 @@ const AdminPanel = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
-                            className="glass-card p-6 rounded-lg border border-border"
+                            className="glass-card p-3 md:p-6 rounded-lg border border-border"
                         >
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                                 <div>
-                                    <p className="text-sm text-muted-foreground mb-1">Total de Atendimentos</p>
-                                    <p className="text-3xl font-bold text-blue-500">{totalAttendanceCount}</p>
-                                    {topAttendant && <p className="text-xs text-muted-foreground mt-1">Top: {topAttendant.name}</p>}
+                                    <p className="text-xs md:text-sm text-muted-foreground mb-1">Atendimentos</p>
+                                    <p className="text-lg md:text-3xl font-bold text-blue-500">{totalAttendanceCount}</p>
+                                    {topAttendant && <p className="text-xs text-muted-foreground mt-1 hidden md:block">Top: {topAttendant.name}</p>}
                                 </div>
-                                <div className="w-12 h-12 rounded-lg bg-blue-500/15 flex items-center justify-center">
-                                    <Phone className="w-6 h-6 text-blue-500" />
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+                                    <Phone className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
                                 </div>
                             </div>
                         </motion.div>
@@ -936,23 +938,23 @@ const AdminPanel = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4 }}
-                            className="glass-card p-6 rounded-lg border border-border"
+                            className="glass-card p-3 md:p-6 rounded-lg border border-border"
                         >
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                                 <div>
-                                    <p className="text-sm text-muted-foreground mb-1">Total de Instalações</p>
-                                    <p className="text-3xl font-bold text-purple-500">{totalInstallationsCount}</p>
-                                    {topInstaller && <p className="text-xs text-muted-foreground mt-1">Top: {topInstaller.name}</p>}
+                                    <p className="text-xs md:text-sm text-muted-foreground mb-1">Instalações</p>
+                                    <p className="text-lg md:text-3xl font-bold text-purple-500">{totalInstallationsCount}</p>
+                                    {topInstaller && <p className="text-xs text-muted-foreground mt-1 hidden md:block">Top: {topInstaller.name}</p>}
                                 </div>
-                                <div className="w-12 h-12 rounded-lg bg-purple-500/15 flex items-center justify-center">
-                                    <Package className="w-6 h-6 text-purple-500" />
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-purple-500/15 flex items-center justify-center flex-shrink-0">
+                                    <Package className="w-5 h-5 md:w-6 md:h-6 text-purple-500" />
                                 </div>
                             </div>
                         </motion.div>
                     </div>
 
                     {/* CARDS ADICIONAIS DE ANÁLISE */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
                         {/* Top 3 Vendedores */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
