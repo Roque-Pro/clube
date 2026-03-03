@@ -197,9 +197,9 @@ const Landing = () => {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.6, duration: 0.8 }}
-                      className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-3xl p-8 sm:p-12 max-w-2xl mx-auto shadow-2xl"
+                      className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-3xl p-6 sm:p-8 max-w-2xl mx-auto shadow-2xl"
                     >
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
                             <div className="flex flex-col items-center justify-center sm:border-r-2 sm:border-blue-300">
                                 <p className="text-blue-600 text-sm font-semibold uppercase tracking-wide mb-4">Plano Anual</p>
                                 <div className="flex items-baseline gap-1">
@@ -338,7 +338,7 @@ const Landing = () => {
                                         <div>
                                             <p className="font-bold text-gray-900">Qualidade Garantida</p>
                                             <p className="text-gray-600">
-                                                Vidros originais. Garantia de 12 meses em cada serviço.
+                                                Vidros homologados. Garantia de 12 meses em cada serviço.
                                             </p>
                                         </div>
                                     </div>
@@ -451,7 +451,7 @@ const Landing = () => {
                                 icon: Shield,
                                 title: "Qualidade Comprovada",
                                 description:
-                                    "Apenas vidros originais. Parcerias certificadas. Garantia de 12 meses.",
+                                    "Apenas vidros homologados. Parcerias certificadas. Garantia de 12 meses.",
                                 color: "from-green-500 to-green-600",
                                 light: "bg-green-50",
                             },
@@ -541,9 +541,9 @@ const Landing = () => {
                                         "Use quando precisar. Vidro dianteiro, traseiro, lateral. Sem restrições.",
                                 },
                                 {
-                                    title: "Vidros 100% Originais",
+                                    title: "Vidros 100% Homologados",
                                     description:
-                                        "Todos os vidros são originais com garantia de 12 meses contra defeitos.",
+                                        "Todos os vidros são homologados com garantia de 12 meses contra defeitos.",
                                 },
                                 {
                                     title: "Agendamento Rápido",
