@@ -217,7 +217,7 @@ const Landing = () => {
                                 <p className="text-blue-600 text-sm font-semibold uppercase tracking-wide mb-6">Incluso</p>
                                 <div className="flex items-center justify-center gap-4 mb-2">
                                     <Shield className="w-8 h-8 text-green-500 flex-shrink-0" />
-                                    <p className="text-7xl sm:text-8xl font-display font-black text-green-600">
+                                    <p className="text-5xl sm:text-7xl font-display font-black text-green-600">
                                         3
                                     </p>
                                 </div>
