@@ -161,7 +161,7 @@ const Landing = () => {
                         className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed"
                     >
                         Seu carro merece cuidado. Nós oferecemos a tranquilidade que você procura com
-                        <strong className="text-blue-600"> 3 trocas anuais, agendamento fácil e suporte 24/7.</strong>
+                        <strong className="text-blue-600"><span className="text-2xl sm:text-3xl md:text-4xl"> 3</span> trocas anuais, agendamento fácil e suporte 24/7.</strong>
                     </motion.p>
 
                     {/* CTA Buttons */}
@@ -197,28 +197,35 @@ const Landing = () => {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.6, duration: 0.8 }}
-                      className="bg-white border-2 border-blue-200 rounded-2xl p-6 sm:p-8 max-w-2xl mx-auto shadow-xl"
+                      className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-3xl p-8 sm:p-12 max-w-2xl mx-auto shadow-2xl"
                     >
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            <div className="text-center sm:border-r sm:border-gray-200 pb-4 sm:pb-0">
-                                <p className="text-gray-600 text-sm mb-2">Plano Anual</p>
-                                <p className="text-4xl sm:text-5xl font-display font-black text-blue-600">
-                                    R$ {annualPrice.toFixed(2)}
-                                </p>
-                                <p className="text-xs sm:text-sm text-gray-500 mt-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10">
+                            <div className="flex flex-col items-center justify-center sm:border-r-2 sm:border-blue-300">
+                                <p className="text-blue-600 text-sm font-semibold uppercase tracking-wide mb-4">Plano Anual</p>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-5xl sm:text-6xl font-display font-black text-blue-700">
+                                        {annualPrice.toFixed(2).split('.')[0]}
+                                    </span>
+                                    <span className="text-xl text-blue-600 font-bold">{annualPrice.toFixed(2).split('.')[1] ? ',' + annualPrice.toFixed(2).split('.')[1] : ''}</span>
+                                </div>
+                                <p className="text-base text-blue-600 font-semibold mt-1">R$</p>
+                                <p className="text-sm text-blue-700 font-medium mt-4">
                                     Renovação automática
                                 </p>
                             </div>
-                            <div className="text-center">
-                                <p className="text-gray-600 text-sm mb-2">Incluso</p>
-                                <div className="flex items-center justify-center gap-2">
-                                    <Shield className="w-5 h-5 text-green-500" />
-                                    <p className="text-2xl sm:text-3xl font-display font-bold text-green-600">
+                            <div className="flex flex-col items-center justify-center">
+                                <p className="text-blue-600 text-sm font-semibold uppercase tracking-wide mb-6">Incluso</p>
+                                <div className="flex items-center justify-center gap-4 mb-2">
+                                    <Shield className="w-8 h-8 text-green-500 flex-shrink-0" />
+                                    <p className="text-7xl sm:text-8xl font-display font-black text-green-600">
                                         3
                                     </p>
                                 </div>
-                                <p className="text-xs sm:text-sm text-gray-500 mt-2">
-                                    Trocas anuais
+                                <p className="text-base text-blue-700 font-semibold">
+                                    Trocas de Vidro
+                                </p>
+                                <p className="text-sm text-blue-600 mt-1">
+                                    por ano
                                 </p>
                             </div>
                         </div>
@@ -629,7 +636,7 @@ const Landing = () => {
                                     <div className="space-y-3 mb-8">
                                         <div className="flex items-center gap-3 text-gray-700">
                                             <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                            <span>3 trocas incluídas por ano</span>
+                                            <span><span className="text-lg font-bold text-blue-600">3</span> trocas incluídas por ano</span>
                                         </div>
                                         <div className="flex items-center gap-3 text-gray-700">
                                             <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
