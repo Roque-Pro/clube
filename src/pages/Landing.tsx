@@ -197,34 +197,34 @@ const Landing = () => {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.6, duration: 0.8 }}
-                      className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-3xl p-6 sm:p-8 max-w-2xl mx-auto shadow-2xl"
+                      className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-2xl p-4 sm:p-8 max-w-2xl mx-auto shadow-2xl w-full"
                     >
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-8">
                             <div className="flex flex-col items-center justify-center sm:border-r-2 sm:border-blue-300">
-                                <p className="text-blue-600 text-sm font-semibold uppercase tracking-wide mb-4">Plano Anual</p>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-5xl sm:text-6xl font-display font-black text-blue-700">
+                                <p className="text-blue-600 text-xs sm:text-sm font-semibold uppercase tracking-wide mb-2 sm:mb-4">Plano Anual</p>
+                                <div className="flex items-baseline gap-0.5">
+                                    <span className="text-3xl sm:text-6xl font-display font-black text-blue-700">
                                         {annualPrice.toFixed(2).split('.')[0]}
                                     </span>
-                                    <span className="text-xl text-blue-600 font-bold">{annualPrice.toFixed(2).split('.')[1] ? ',' + annualPrice.toFixed(2).split('.')[1] : ''}</span>
+                                    <span className="text-sm sm:text-xl text-blue-600 font-bold">{annualPrice.toFixed(2).split('.')[1] ? ',' + annualPrice.toFixed(2).split('.')[1] : ''}</span>
                                 </div>
-                                <p className="text-base text-blue-600 font-semibold mt-1">R$</p>
-                                <p className="text-sm text-blue-700 font-medium mt-4">
+                                <p className="text-xs sm:text-base text-blue-600 font-semibold mt-0.5 sm:mt-1">R$</p>
+                                <p className="text-xs sm:text-sm text-blue-700 font-medium mt-2 sm:mt-4">
                                     Renovação automática
                                 </p>
                             </div>
                             <div className="flex flex-col items-center justify-center">
-                                <p className="text-blue-600 text-sm font-semibold uppercase tracking-wide mb-6">Incluso</p>
-                                <div className="flex items-center justify-center gap-4 mb-2">
-                                    <Shield className="w-8 h-8 text-green-500 flex-shrink-0" />
-                                    <p className="text-5xl sm:text-7xl font-display font-black text-green-600">
+                                <p className="text-blue-600 text-xs sm:text-sm font-semibold uppercase tracking-wide mb-3 sm:mb-6">Incluso</p>
+                                <div className="flex items-center justify-center gap-2 sm:gap-4 mb-1 sm:mb-2">
+                                    <Shield className="w-5 h-5 sm:w-8 sm:h-8 text-green-500 flex-shrink-0" />
+                                    <p className="text-4xl sm:text-7xl font-display font-black text-green-600 leading-none">
                                         3
                                     </p>
                                 </div>
-                                <p className="text-base text-blue-700 font-semibold">
+                                <p className="text-xs sm:text-base text-blue-700 font-semibold">
                                     Trocas de Vidro
                                 </p>
-                                <p className="text-sm text-blue-600 mt-1">
+                                <p className="text-xs sm:text-sm text-blue-600 mt-0.5 sm:mt-1">
                                     por ano
                                 </p>
                             </div>
