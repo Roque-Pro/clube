@@ -62,6 +62,9 @@ const Sales = () => {
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [receiptBlob, setReceiptBlob] = useState<Blob | null>(null);
   const [receiptFileName, setReceiptFileName] = useState("");
+  const [lastSaleData, setLastSaleData] = useState<any>(null);
+  const [addEmployeeDialogOpen, setAddEmployeeDialogOpen] = useState(false);
+  const [selectedAdditionalEmployee, setSelectedAdditionalEmployee] = useState("");
 
   // Fetch products
   const fetchProducts = async () => {
@@ -184,6 +187,26 @@ const Sales = () => {
 
       if (saleError) throw saleError;
 
+      // Insert into sale_products_employees to track vendedor per product
+      if (saleData && saleData.length > 0) {
+        const saleId = saleData[0].id;
+        const { error: saleProductError } = await supabase
+          .from("sale_products_employees")
+          .insert({
+            sale_id: saleId,
+            product_id: saleForm.product_id,
+            employee_id: saleForm.employee_id,
+            quantity: quantity,
+            unit_price: selectedProduct.price,
+            subtotal: saleAmount,
+          });
+
+        if (saleProductError) {
+          console.warn("Aviso: não foi possível registrar na tabela sale_products_employees:", saleProductError);
+          // Não lanço erro aqui pq a venda já foi criada
+        }
+      }
+
       // Update product quantity
       const { error: updateError } = await supabase
         .from("products")
@@ -241,6 +264,15 @@ const Sales = () => {
           setReceiptBlob(blob);
           setReceiptFileName(`recibo_${sale.id}_${new Date().toISOString().split("T")[0]}.pdf`);
           setReceiptModalOpen(true);
+          
+          // Guardar dados da venda para permitir adicionar outro colaborador
+          setLastSaleData({
+            saleId: sale.id,
+            productId: saleForm.product_id,
+            quantity: quantity,
+            unitPrice: selectedProduct.price,
+            saleAmount: saleAmount,
+          });
         } catch (err) {
           console.warn("Erro ao gerar cupom:", err);
         }
@@ -248,6 +280,12 @@ const Sales = () => {
 
       setSaleForm({ product_id: "", quantity: "", notes: "", payment_method: "dinheiro", employee_id: "" });
       setDialogOpen(false);
+      
+      // Abrir dialog para adicionar outro colaborador após um pequeno delay
+      setTimeout(() => {
+        setAddEmployeeDialogOpen(true);
+      }, 500);
+      
       fetchProducts();
       fetchEmployees();
       fetchSales();
@@ -259,6 +297,44 @@ const Sales = () => {
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAddAdditionalEmployee = async () => {
+    if (!selectedAdditionalEmployee || !lastSaleData) {
+      toast({ title: "Selecione um colaborador", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("sale_products_employees")
+        .insert({
+          sale_id: lastSaleData.saleId,
+          product_id: lastSaleData.productId,
+          employee_id: selectedAdditionalEmployee,
+          quantity: lastSaleData.quantity,
+          unit_price: lastSaleData.unitPrice,
+          subtotal: lastSaleData.saleAmount,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Colaborador adicionado!",
+        description: "Este produto agora está associado a múltiplos vendedores.",
+      });
+
+      setAddEmployeeDialogOpen(false);
+      setSelectedAdditionalEmployee("");
+      setLastSaleData(null);
+      fetchSales();
+    } catch (err: any) {
+      toast({
+        title: "Erro ao adicionar colaborador",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -562,6 +638,54 @@ const Sales = () => {
         pdfBlob={receiptBlob}
         fileName={receiptFileName}
       />
+
+      {/* Dialog to add additional employee */}
+      <Dialog open={addEmployeeDialogOpen} onOpenChange={setAddEmployeeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar outro colaborador ao produto</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Deseja associar outro vendedor a este produto? A comissão será compartilhada.
+            </p>
+            <div>
+              <Label htmlFor="additional-employee">Selecione o colaborador *</Label>
+              <Select value={selectedAdditionalEmployee} onValueChange={setSelectedAdditionalEmployee}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um colaborador" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleAddAdditionalEmployee}
+                className="flex-1"
+              >
+                Adicionar
+              </Button>
+              <Button
+                onClick={() => {
+                  setAddEmployeeDialogOpen(false);
+                  setSelectedAdditionalEmployee("");
+                  setLastSaleData(null);
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Não adicionar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

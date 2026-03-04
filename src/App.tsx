@@ -11,7 +11,7 @@ import Clients from "./pages/Clients";
 import Inventory from "./pages/Inventory";
 import History from "./pages/History";
 import AdminPanel from "./pages/AdminPanel";
-import Sales from "./pages/Sales";
+import SalesNew from "./pages/SalesNew";
 import Auth from "./pages/Auth";
 import PlanAuth from "./pages/PlanAuth";
 import ClientDashboard from "./pages/ClientDashboard";
@@ -44,7 +44,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/clientes" element={<Clients />} />
               <Route path="/estoque" element={<Inventory />} />
-              <Route path="/vendas" element={<Sales />} />
+              <Route path="/vendas" element={<SalesNew />} />
               <Route path="/historico" element={<History />} />
               <Route path="/admin" element={<AdminPanel />} />
             </Route>

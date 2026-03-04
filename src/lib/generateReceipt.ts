@@ -1,5 +1,13 @@
 import jsPDF from "jspdf";
 
+export interface ReceiptProduct {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  isGlass?: boolean; // Cada produto pode ser ou não vidro
+}
+
 export interface ReceiptData {
   saleId: string;
   storeName: string;
@@ -7,14 +15,12 @@ export interface ReceiptData {
   storeAddress: string;
   storeLogo?: string;
   storeEmail?: string;
-  productName: string;
-  quantity: number;
-  unitPrice: number;
+  products: ReceiptProduct[]; // Array de produtos
   totalAmount: number;
   paymentMethod: string;
   saleDate: string;
   notes?: string;
-  isGlassWarranty?: boolean; // Se é vidro/parabrisa/vigia (mostra garantia)
+  isGlassWarranty?: boolean; // Se ALGUM produto é vidro (mostra garantia no final)
 }
 
 // Função para carregar imagem como base64
@@ -154,12 +160,12 @@ export const generateReceipt = async (data: ReceiptData): Promise<Blob> => {
   pdf.text(`ID da Venda: ${data.saleId}`, dataX, yPosition);
   yPosition += 10;
 
-  // ============ DETALHES DO PRODUTO ============
+  // ============ DETALHES DOS PRODUTOS ============
 
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(normalFont);
   pdf.setTextColor(...primaryColor);
-  pdf.text("Descrição do Produto", dataX, yPosition);
+  pdf.text("Descrição dos Produtos", dataX, yPosition);
   yPosition += 6;
 
   // Linha de separação
@@ -167,18 +173,24 @@ export const generateReceipt = async (data: ReceiptData): Promise<Blob> => {
   pdf.line(dataX, yPosition, pageWidth - dataX, yPosition);
   yPosition += 4;
 
-  // Produto
+  // Lista de produtos
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(0, 0, 0);
-  const productLines = pdf.splitTextToSize(data.productName, dataWidth);
-  pdf.text(productLines, dataX, yPosition);
-  yPosition += productLines.length * 5 + 4;
+  
+  data.products.forEach((product, index) => {
+    // Produto
+    const productLines = pdf.splitTextToSize(`${index + 1}. ${product.name}`, dataWidth);
+    pdf.text(productLines, dataX, yPosition);
+    yPosition += productLines.length * 4 + 2;
 
-  // Quantidade e preço
-  pdf.text(`Quantidade: ${data.quantity} un.`, dataX, yPosition);
-  yPosition += 5;
-  pdf.text(`Preço Unitário: R$ ${data.unitPrice.toFixed(2)}`, dataX, yPosition);
-  yPosition += 8;
+    // Quantidade e preço
+    pdf.setFontSize(normalFont - 1);
+    pdf.text(`   Quantidade: ${product.quantity} un. | Unitário: R$ ${product.unitPrice.toFixed(2)}`, dataX, yPosition);
+    yPosition += 5;
+    pdf.text(`   Subtotal: R$ ${product.subtotal.toFixed(2)}`, dataX, yPosition);
+    yPosition += 7;
+    pdf.setFontSize(normalFont);
+  });
 
   // ============ RESUMO FINANCEIRO ============
 

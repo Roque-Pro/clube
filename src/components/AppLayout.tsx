@@ -12,7 +12,7 @@ const AppLayout = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       {/* Mobile Header */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-sidebar border-b border-sidebar-border z-50 md:hidden flex items-center px-4">
         <button
@@ -45,7 +45,7 @@ const AppLayout = () => {
 
       {/* Sidebar */}
       <div
-        className={`fixed left-0 top-0 z-40 h-screen w-64 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:relative md:top-auto ${
+        className={`fixed left-0 top-0 z-40 h-screen w-64 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:sticky md:top-0 md:h-screen md:w-64 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -53,7 +53,7 @@ const AppLayout = () => {
       </div>
 
       {/* Main Content */}
-      <main className="min-h-screen md:p-8 p-4 pt-20 md:pt-8 pb-8">
+      <main className="flex-1 min-h-screen w-full md:p-8 p-4 pt-20 md:pt-8 pb-8">
         <Outlet />
       </main>
     </div>
