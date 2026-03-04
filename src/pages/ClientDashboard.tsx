@@ -35,101 +35,132 @@ interface Appointment {
 }
 
 const ClientDashboard = () => {
-     const navigate = useNavigate();
-     const { session, loading, user, signOut } = useAuth();
-     const { toast } = useToast();
-     const [clientData, setClientData] = useState<ClientProfile | null>(null);
-     const [dataLoading, setDataLoading] = useState(true);
-     const [editingSection, setEditingSection] = useState<"personal" | "vehicle" | null>(null);
-     const [formData, setFormData] = useState<ClientProfile>({
-         name: "",
-         email: "",
-         phone: "",
-         cpf: "",
-         vehicle: "",
-         plate: "",
-     });
-     const [saving, setSaving] = useState(false);
-     const [appointments, setAppointments] = useState<Appointment[]>([]);
-     const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
-     const [submittingAppointment, setSubmittingAppointment] = useState(false);
-     const [appointmentForm, setAppointmentForm] = useState({
-         service_type: "",
-         scheduled_date: "",
-         scheduled_time: "",
-         notes: "",
-     });
+    const navigate = useNavigate();
+    const { session, loading, user, signOut } = useAuth();
+    const { toast } = useToast();
+    const [clientData, setClientData] = useState<ClientProfile | null>(null);
+    const [dataLoading, setDataLoading] = useState(true);
+    const [editingSection, setEditingSection] = useState<"personal" | "vehicle" | null>(null);
+    const [formData, setFormData] = useState<ClientProfile>({
+        name: "",
+        email: "",
+        phone: "",
+        cpf: "",
+        vehicle: "",
+        plate: "",
+    });
+    const [saving, setSaving] = useState(false);
+    const [appointments, setAppointments] = useState<Appointment[]>([]);
+    const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
+    const [submittingAppointment, setSubmittingAppointment] = useState(false);
+    const [appointmentForm, setAppointmentForm] = useState({
+        service_type: "",
+        scheduled_date: "",
+        scheduled_time: "",
+        notes: "",
+    });
 
-     const replacementItems = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Vidro lateral", "Insumo", "Ferramenta", "Outro"];
+    const replacementItems = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Vidro lateral", "Insumo", "Ferramenta", "Outro"];
 
-     // All hooks must be called before any conditional logic below
+    // All hooks must be called before any conditional logic below
 
-     // Fetch appointments callback
-     const fetchAppointments = useCallback(async (clientId: string) => {
-         try {
-             const { data, error } = await supabase
-                 .from("appointments")
-                 .select("*")
-                 .eq("client_id", clientId)
-                 .order("scheduled_date", { ascending: false });
+    // Fetch appointments callback
+    const fetchAppointments = useCallback(async (clientId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from("appointments")
+                .select("*")
+                .eq("client_id", clientId)
+                .order("scheduled_date", { ascending: false });
 
-             if (error) throw error;
-             setAppointments(data || []);
-         } catch (err) {
-             console.error("Erro ao carregar agendamentos:", err);
-         }
-     }, []);
+            if (error) throw error;
+            setAppointments(data || []);
+        } catch (err) {
+            console.error("Erro ao carregar agendamentos:", err);
+        }
+    }, []);
 
-     // Fetch client profile data and appointments
-     useEffect(() => {
-       const fetchClientData = async () => {
-         try {
-           // Search by email to find the client record
-           const { data, error } = await supabase
-             .from("clients")
-             .select("*")
-             .eq("email", session.user?.email);
+    // Fetch client profile data and appointments
+    useEffect(() => {
+      const fetchClientData = async () => {
+        try {
+          const userId = session.user?.id;
+          const userEmail = session.user?.email;
+          console.log("🔍 Buscando cliente por User ID:", userId);
+          console.log("📧 Email:", userEmail);
+          
+          if (!userId) {
+            console.warn("⚠️ User ID não disponível");
+            setDataLoading(false);
+            return;
+          }
 
-           if (error) {
-             console.error("Erro ao buscar cliente:", error);
-             throw error;
-           }
-           
-           if (data && data.length > 0) {
-             const clientRecord = data[0];
-             setClientData(clientRecord);
-             setFormData(clientRecord);
-             // Fetch appointments for this client
-             fetchAppointments(clientRecord.id);
-           } else {
-             console.warn("Nenhum cliente encontrado para este usuário");
-             // Create empty profile if not found
-             setClientData(null);
-           }
-         } catch (err) {
-           console.error("Erro ao carregar dados:", err);
-         } finally {
-           setDataLoading(false);
-         }
-       };
+          // Search by user_id first (mais confiável)
+          const { data, error } = await supabase
+            .from("clients")
+            .select("*")
+            .eq("user_id", userId)
+            .maybeSingle();
 
-       if (session?.user?.email) {
-         fetchClientData();
-       }
-     }, [session, fetchAppointments]);
+          console.log("📋 Resposta da query por user_id:", { data, error });
 
-     // Auto-refresh appointments every 30 seconds
-     useEffect(() => {
-       if (!clientData?.id) {
-         return;
-       }
+          if (error && error.code !== "PGRST116") {
+            console.error("❌ Erro ao buscar cliente:", error);
+            setClientData(null);
+          } else if (data) {
+            console.log("✅ Cliente encontrado por user_id:", data);
+            setClientData(data);
+            setFormData(data);
+            // Fetch appointments for this client
+            fetchAppointments(data.id);
+          } else {
+            console.warn("⚠️ Nenhum cliente encontrado para user_id:", userId);
+            // Fallback: tentar buscar por email
+            console.log("🔄 Tentando fallback por email:", userEmail);
+            const { data: emailData, error: emailError } = await supabase
+              .from("clients")
+              .select("*")
+              .eq("email", userEmail)
+              .maybeSingle();
 
-       const interval = setInterval(() => {
-         fetchAppointments(clientData.id!);
-       }, 30000);
+            if (emailData) {
+              console.log("✅ Cliente encontrado por email:", emailData);
+              setClientData(emailData);
+              setFormData(emailData);
+              fetchAppointments(emailData.id);
+            } else {
+              console.warn("⚠️ Nenhum cliente encontrado. Email:", userEmail, "Error:", emailError);
+              setClientData(null);
+            }
+          }
+        } catch (err) {
+          console.error("❌ Erro ao carregar dados:", err);
+          setClientData(null);
+        } finally {
+          setDataLoading(false);
+        }
+      };
 
-       return () => clearInterval(interval);
-     }, [clientData?.id, fetchAppointments]);
+      if (session?.user?.id) {
+        fetchClientData();
+      } else {
+        console.warn("⚠️ Session não pronta ou user não autenticado", session?.user);
+        setDataLoading(false);
+      }
+    }, [session, fetchAppointments]);
+
+    // Auto-refresh appointments every 30 seconds
+    useEffect(() => {
+        if (!clientData?.id) {
+            return;
+        }
+
+        const interval = setInterval(() => {
+            fetchAppointments(clientData.id!);
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [clientData?.id, fetchAppointments]);
 
     const handleAddAppointment = async () => {
         if (!appointmentForm.service_type || !appointmentForm.scheduled_date || !appointmentForm.scheduled_time || !clientData) {
@@ -204,29 +235,29 @@ const ClientDashboard = () => {
     };
 
     const handleCancelAppointment = async (appointmentId: string) => {
-         try {
-             // Update appointment status to cancelled
-             const { error: updateError } = await supabase
-                 .from("appointments")
-                 .update({ status: "cancelado" })
-                 .eq("id", appointmentId);
+        try {
+            // Update appointment status to cancelled
+            const { error: updateError } = await supabase
+                .from("appointments")
+                .update({ status: "cancelado" })
+                .eq("id", appointmentId);
 
-             if (updateError) throw updateError;
+            if (updateError) throw updateError;
 
-             // Refresh appointments list
-             if (clientData?.id) {
-                 fetchAppointments(clientData.id);
-             }
+            // Refresh appointments list
+            if (clientData?.id) {
+                fetchAppointments(clientData.id);
+            }
 
-             toast({ title: "Agendamento cancelado", description: "Crédito devolvido com sucesso!" });
-         } catch (err: any) {
-             toast({
-                 title: "Erro ao cancelar",
-                 description: err.message,
-                 variant: "destructive",
-             });
-         }
-     };
+            toast({ title: "Agendamento cancelado", description: "Crédito devolvido com sucesso!" });
+        } catch (err: any) {
+            toast({
+                title: "Erro ao cancelar",
+                description: err.message,
+                variant: "destructive",
+            });
+        }
+    };
 
     const handleLogout = async () => {
         await signOut();
@@ -412,46 +443,46 @@ const ClientDashboard = () => {
                         </div>
 
                         {/* Appointments List */}
-                         <div className="space-y-3">
-                             <p className="text-sm text-muted-foreground mb-4">
-                                 Agendamentos: <strong>{appointments.filter((apt) => new Date(apt.scheduled_date).getFullYear() === new Date().getFullYear() && apt.status !== "cancelado").length}</strong> de <strong>{clientData?.max_replacements || 3}</strong> por ano
-                             </p>
+                        <div className="space-y-3">
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Agendamentos: <strong>{appointments.filter((apt) => new Date(apt.scheduled_date).getFullYear() === new Date().getFullYear() && apt.status !== "cancelado").length}</strong> de <strong>{clientData?.max_replacements || 3}</strong> por ano
+                            </p>
                             {appointments.length === 0 ? (
                                 <p className="text-sm text-muted-foreground text-center py-8">Nenhum agendamento realizado ainda</p>
                             ) : (
                                 appointments.map((apt) => {
-                                     const bgColor = apt.status === "pendente" ? "bg-amber-50 dark:bg-amber-950/20" : apt.status === "confirmado" ? "bg-blue-50 dark:bg-blue-950/20" : apt.status === "cancelado" ? "bg-red-50 dark:bg-red-950/20" : "bg-green-50 dark:bg-green-950/20";
-                                     const borderColor = apt.status === "pendente" ? "border-amber-200" : apt.status === "confirmado" ? "border-blue-200" : apt.status === "cancelado" ? "border-red-200" : "border-green-200";
-                                     const canCancel = apt.status !== "concluido" && apt.status !== "cancelado";
-                                     return (
-                                     <div key={apt.id} className={`p-4 ${bgColor} rounded-lg border ${borderColor} border-l-4`}>
-                                         <div className="flex items-start justify-between mb-2">
-                                             <div>
-                                                 <p className="font-medium text-foreground">{apt.service_type}</p>
-                                                 <p className="text-sm text-muted-foreground mt-1">
-                                                     📅 {new Date(apt.scheduled_date).toLocaleDateString("pt-BR")} às {apt.scheduled_time}
-                                                 </p>
-                                             </div>
-                                             <div className="flex items-center gap-2">
-                                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${apt.status === "pendente" ? "bg-amber-100 text-amber-700" : apt.status === "confirmado" ? "bg-blue-100 text-blue-700" : apt.status === "cancelado" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-                                                     {apt.status === "pendente" ? "⏳ Pendente" : apt.status === "confirmado" ? "⏱️ Confirmado" : apt.status === "cancelado" ? "✕ Cancelado" : "✓ Concluído"}
-                                                 </span>
-                                                 {canCancel && (
-                                                     <Button
-                                                         variant="ghost"
-                                                         size="sm"
-                                                         onClick={() => handleCancelAppointment(apt.id)}
-                                                         className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-                                                     >
-                                                         <Trash2 className="w-4 h-4" />
-                                                     </Button>
-                                                 )}
-                                             </div>
-                                         </div>
-                                         {apt.notes && <p className="text-sm text-muted-foreground">💬 {apt.notes}</p>}
-                                     </div>
-                                     );
-                                 })
+                                    const bgColor = apt.status === "pendente" ? "bg-amber-50 dark:bg-amber-950/20" : apt.status === "confirmado" ? "bg-blue-50 dark:bg-blue-950/20" : apt.status === "cancelado" ? "bg-red-50 dark:bg-red-950/20" : "bg-green-50 dark:bg-green-950/20";
+                                    const borderColor = apt.status === "pendente" ? "border-amber-200" : apt.status === "confirmado" ? "border-blue-200" : apt.status === "cancelado" ? "border-red-200" : "border-green-200";
+                                    const canCancel = apt.status !== "concluido" && apt.status !== "cancelado";
+                                    return (
+                                        <div key={apt.id} className={`p-4 ${bgColor} rounded-lg border ${borderColor} border-l-4`}>
+                                            <div className="flex items-start justify-between mb-2">
+                                                <div>
+                                                    <p className="font-medium text-foreground">{apt.service_type}</p>
+                                                    <p className="text-sm text-muted-foreground mt-1">
+                                                        📅 {new Date(apt.scheduled_date).toLocaleDateString("pt-BR")} às {apt.scheduled_time}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${apt.status === "pendente" ? "bg-amber-100 text-amber-700" : apt.status === "confirmado" ? "bg-blue-100 text-blue-700" : apt.status === "cancelado" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                                                        {apt.status === "pendente" ? "⏳ Pendente" : apt.status === "confirmado" ? "⏱️ Confirmado" : apt.status === "cancelado" ? "✕ Cancelado" : "✓ Concluído"}
+                                                    </span>
+                                                    {canCancel && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleCancelAppointment(apt.id)}
+                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {apt.notes && <p className="text-sm text-muted-foreground">💬 {apt.notes}</p>}
+                                        </div>
+                                    );
+                                })
                             )}
                         </div>
                     </motion.div>

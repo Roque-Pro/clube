@@ -181,6 +181,9 @@ const Clients = () => {
             });
 
             if (authError) throw new Error(`Erro ao criar usuário: ${authError.message}`);
+            if (!authData.user?.id) throw new Error("User ID não retornado após signup");
+
+            const userId = authData.user.id;
 
             const now = new Date();
             const end = new Date(now);
@@ -188,10 +191,11 @@ const Clients = () => {
             const planStart = now.toISOString().split("T")[0];
             const planEnd = end.toISOString().split("T")[0];
 
-            // 2. Inserir na tabela clients
+            // 2. Inserir na tabela clients com user_id
             const { data, error } = await supabase
                 .from("clients")
                 .insert({
+                    user_id: userId,
                     name: form.name,
                     phone: form.phone,
                     email: form.email,
