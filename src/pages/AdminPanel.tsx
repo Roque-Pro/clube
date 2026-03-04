@@ -33,9 +33,11 @@ interface Product {
     name: string;
     category: string;
     quantity: number;
-    minQuantity: number;
+    min_quantity: number;
     price: number;
     supplier: string;
+    store?: string;
+    cost_price?: number;
 }
 
 interface Asset {
@@ -74,7 +76,10 @@ const AdminPanel = () => {
      const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
      const [empToDelete, setEmpToDelete] = useState<Employee | null>(null);
      const [invDialogOpen, setInvDialogOpen] = useState(false);
-     const [invForm, setInvForm] = useState({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "" });
+     const [invForm, setInvForm] = useState({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "Loja 1", costPrice: "" });
+     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+     const [productDeleteConfirmOpen, setProductDeleteConfirmOpen] = useState(false);
+     const [productToDelete, setProductToDelete] = useState<Product | null>(null);
      const [assetDialogOpen, setAssetDialogOpen] = useState(false);
      const [assetForm, setAssetForm] = useState({ name: "", asset_type: "Outro", notes: "", value: "" });
      const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
@@ -495,20 +500,48 @@ const AdminPanel = () => {
         }
         setSubmitting(true);
         try {
-            const { error } = await supabase
-                .from("products")
-                .insert({
-                    name: invForm.name,
-                    category: invForm.category,
-                    quantity: parseInt(invForm.quantity),
-                    min_quantity: parseInt(invForm.minQuantity) || 1,
-                    price: parseFloat(invForm.price) || 0,
-                    supplier: invForm.supplier || "N/A",
-                });
+            if (editingProduct) {
+                // Atualizar produto
+                const { error } = await supabase
+                    .from("products")
+                    .update({
+                        name: invForm.name,
+                        category: invForm.category,
+                        min_quantity: parseInt(invForm.minQuantity) || 1,
+                        price: parseFloat(invForm.price) || 0,
+                        supplier: invForm.supplier || "N/A",
+                        store: invForm.store || "Loja 1",
+                        cost_price: parseFloat(invForm.costPrice) || 0,
+                    })
+                    .eq("id", editingProduct.id);
 
-            if (error) throw error;
-            toast({ title: "Produto cadastrado com sucesso!" });
-            setInvForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "" });
+                if (error) throw error;
+                logAction("update", "products", editingProduct.id, editingProduct.name, `Atualizado: ${invForm.name}`);
+                toast({ title: "Produto atualizado com sucesso!" });
+            } else {
+                // Criar novo produto
+                const { data, error } = await supabase
+                    .from("products")
+                    .insert({
+                        name: invForm.name,
+                        category: invForm.category,
+                        quantity: parseInt(invForm.quantity),
+                        min_quantity: parseInt(invForm.minQuantity) || 1,
+                        price: parseFloat(invForm.price) || 0,
+                        supplier: invForm.supplier || "N/A",
+                        store: invForm.store || "Loja 1",
+                        cost_price: parseFloat(invForm.costPrice) || 0,
+                    })
+                    .select();
+
+                if (error) throw error;
+                if (data && data[0]) {
+                    logAction("create", "products", data[0].id, invForm.name, `Categoria: ${invForm.category} - Loja: ${invForm.store}`);
+                }
+                toast({ title: "Produto cadastrado com sucesso!" });
+            }
+            setInvForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "Loja 1", costPrice: "" });
+            setEditingProduct(null);
             setInvDialogOpen(false);
             fetchProducts();
         } catch (error: any) {
@@ -522,22 +555,42 @@ const AdminPanel = () => {
         }
     };
 
-    const handleDeleteProduct = async (id: string) => {
+    const handleEditProduct = (product: Product) => {
+        setEditingProduct(product);
+        setInvForm({
+            name: product.name,
+            category: product.category,
+            quantity: product.quantity.toString(),
+            minQuantity: product.min_quantity.toString(),
+            price: product.price.toString(),
+            supplier: product.supplier || "",
+            store: product.store || "Loja 1",
+            costPrice: (product.cost_price || 0).toString(),
+        });
+        setInvDialogOpen(true);
+    };
+
+    const openProductDeleteConfirm = (product: Product) => {
+        setProductToDelete(product);
+        setProductDeleteConfirmOpen(true);
+    };
+
+    const handleDeleteProduct = async () => {
+      if (!productToDelete) return;
       try {
-        const product = products.find(p => p.id === id);
         const { error } = await supabase
           .from("products")
           .delete()
-          .eq("id", id);
+          .eq("id", productToDelete.id);
 
         if (error) throw error;
         
         // Log da ação
-        if (product) {
-          await logAction("delete", "estoque", id, product.name, `Produto removido do estoque`);
-        }
+        await logAction("delete", "products", productToDelete.id, productToDelete.name, `Produto removido do estoque`);
         
         toast({ title: "Produto removido com sucesso!" });
+        setProductDeleteConfirmOpen(false);
+        setProductToDelete(null);
         fetchProducts();
       } catch (error: any) {
         toast({
@@ -774,6 +827,7 @@ const AdminPanel = () => {
     }
 
     const productCategories = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Vidro lateral", "Insumo", "Ferramenta", "Outro"];
+const stores = ["Loja 1", "Loja 2", "Loja 3"];
 
     // Cálculos para saúde do estoque e financeiro
     const totalProducts = products.length;
@@ -1394,80 +1448,124 @@ const AdminPanel = () => {
                                     <Plus className="w-4 h-4" /> Novo Produto
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="bg-card border-border">
-                                <DialogHeader>
-                                    <DialogTitle className="font-display">Cadastrar Produto</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label>Nome *</Label>
-                                        <Input
-                                            value={invForm.name}
-                                            onChange={(e) => setInvForm({ ...invForm, name: e.target.value })}
-                                            placeholder="Nome do produto"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <Label>Categoria *</Label>
-                                            <Select value={invForm.category} onValueChange={(v) => setInvForm({ ...invForm, category: v })}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Selecione..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {productCategories.map((c) => (
-                                                        <SelectItem key={c} value={c}>
-                                                            {c}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
-                                            <Label>Fornecedor</Label>
-                                            <Input
-                                                value={invForm.supplier}
-                                                onChange={(e) => setInvForm({ ...invForm, supplier: e.target.value })}
-                                                placeholder="Nome do fornecedor"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <div>
-                                            <Label>Quantidade *</Label>
-                                            <Input
-                                                type="number"
-                                                value={invForm.quantity}
-                                                onChange={(e) => setInvForm({ ...invForm, quantity: e.target.value })}
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label>Qtd Mínima</Label>
-                                            <Input
-                                                type="number"
-                                                value={invForm.minQuantity}
-                                                onChange={(e) => setInvForm({ ...invForm, minQuantity: e.target.value })}
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label>Preço (R$)</Label>
-                                            <Input
-                                                type="number"
-                                                step="0.01"
-                                                value={invForm.price}
-                                                onChange={(e) => setInvForm({ ...invForm, price: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-                                    <Button
-                                        onClick={handleAddProduct}
-                                        disabled={submitting}
-                                        className="w-full gradient-primary text-primary-foreground font-semibold"
-                                    >
-                                        {submitting ? "Salvando..." : "Cadastrar"}
-                                    </Button>
-                                </div>
-                            </DialogContent>
+                            <DialogContent className="bg-card border-border max-h-[90vh] overflow-y-auto">
+                                 <DialogHeader>
+                                     <DialogTitle className="font-display">{editingProduct ? "Editar Produto" : "Cadastrar Produto"}</DialogTitle>
+                                 </DialogHeader>
+                                 <div className="space-y-4">
+                                     <div>
+                                         <Label>Nome *</Label>
+                                         <Input
+                                             value={invForm.name}
+                                             onChange={(e) => setInvForm({ ...invForm, name: e.target.value })}
+                                             placeholder="Nome do produto"
+                                             disabled={editingProduct ? false : false}
+                                         />
+                                     </div>
+                                     <div className="grid grid-cols-2 gap-4">
+                                         <div>
+                                             <Label>Categoria *</Label>
+                                             <Select value={invForm.category} onValueChange={(v) => setInvForm({ ...invForm, category: v })}>
+                                                 <SelectTrigger>
+                                                     <SelectValue placeholder="Selecione..." />
+                                                 </SelectTrigger>
+                                                 <SelectContent>
+                                                     {productCategories.map((c) => (
+                                                         <SelectItem key={c} value={c}>
+                                                             {c}
+                                                         </SelectItem>
+                                                     ))}
+                                                 </SelectContent>
+                                             </Select>
+                                         </div>
+                                         <div>
+                                             <Label>Loja *</Label>
+                                             <Select value={invForm.store} onValueChange={(v) => setInvForm({ ...invForm, store: v })}>
+                                                 <SelectTrigger>
+                                                     <SelectValue placeholder="Selecione..." />
+                                                 </SelectTrigger>
+                                                 <SelectContent>
+                                                     {stores.map((s) => (
+                                                         <SelectItem key={s} value={s}>
+                                                             {s}
+                                                         </SelectItem>
+                                                     ))}
+                                                 </SelectContent>
+                                             </Select>
+                                         </div>
+                                     </div>
+                                     <div>
+                                         <Label>Fornecedor</Label>
+                                         <Input
+                                             value={invForm.supplier}
+                                             onChange={(e) => setInvForm({ ...invForm, supplier: e.target.value })}
+                                             placeholder="Nome do fornecedor"
+                                         />
+                                     </div>
+                                     <div className="grid grid-cols-2 gap-4">
+                                         <div>
+                                             <Label>Quantidade {editingProduct ? "(somente leitura)" : "*"}</Label>
+                                             <Input
+                                                 type="number"
+                                                 value={invForm.quantity}
+                                                 onChange={(e) => setInvForm({ ...invForm, quantity: e.target.value })}
+                                                 disabled={editingProduct ? true : false}
+                                             />
+                                         </div>
+                                         <div>
+                                             <Label>Qtd Mínima</Label>
+                                             <Input
+                                                 type="number"
+                                                 value={invForm.minQuantity}
+                                                 onChange={(e) => setInvForm({ ...invForm, minQuantity: e.target.value })}
+                                             />
+                                         </div>
+                                     </div>
+                                     <div className="grid grid-cols-2 gap-4">
+                                         <div>
+                                             <Label>Preço de Venda (R$)</Label>
+                                             <Input
+                                                 type="number"
+                                                 step="0.01"
+                                                 value={invForm.price}
+                                                 onChange={(e) => setInvForm({ ...invForm, price: e.target.value })}
+                                             />
+                                         </div>
+                                         <div>
+                                             <Label>Preço de Custo (R$)</Label>
+                                             <Input
+                                                 type="number"
+                                                 step="0.01"
+                                                 value={invForm.costPrice}
+                                                 onChange={(e) => setInvForm({ ...invForm, costPrice: e.target.value })}
+                                                 placeholder="Valor do fornecedor"
+                                             />
+                                         </div>
+                                     </div>
+                                     <div className="flex gap-3">
+                                         <Button
+                                             onClick={handleAddProduct}
+                                             disabled={submitting}
+                                             className="flex-1 gradient-primary text-primary-foreground font-semibold"
+                                         >
+                                             {submitting ? "Salvando..." : editingProduct ? "Atualizar" : "Cadastrar"}
+                                         </Button>
+                                         {editingProduct && (
+                                             <Button
+                                                 onClick={() => {
+                                                     setEditingProduct(null);
+                                                     setInvForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "Loja 1", costPrice: "" });
+                                                     setInvDialogOpen(false);
+                                                 }}
+                                                 variant="outline"
+                                                 className="flex-1"
+                                             >
+                                                 Cancelar
+                                             </Button>
+                                         )}
+                                     </div>
+                                 </div>
+                             </DialogContent>
                         </Dialog>
                     </div>
 
@@ -1478,11 +1576,12 @@ const AdminPanel = () => {
                                 <tr className="border-b border-border">
                                     <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produto</th>
                                     <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Categoria</th>
+                                    <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Loja</th>
                                     <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fornecedor</th>
                                     <th className="text-center p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qtd</th>
                                     <th className="text-center p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mín</th>
-                                    <th className="text-right p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Preço Unit.</th>
-                                    <th className="text-right p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valor Total</th>
+                                    <th className="text-right p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Custo</th>
+                                    <th className="text-right p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Venda</th>
                                     <th className="text-center p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                                     <th className="text-center p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ações</th>
                                 </tr>
@@ -1507,49 +1606,51 @@ const AdminPanel = () => {
                                                     className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
                                                 >
                                                     <td className="p-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", isLow ? "bg-destructive/15" : "bg-primary/15")}>
-                                                                <Package className={cn("w-4 h-4", isLow ? "text-destructive" : "text-primary")} />
-                                                            </div>
-                                                            <span className="font-medium text-foreground text-sm">{p.name}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-4 text-sm text-muted-foreground">{p.category}</td>
-                                                    <td className="p-4 text-sm text-muted-foreground">{p.supplier || "—"}</td>
-                                                    <td className={cn("p-4 text-center font-bold text-sm", isLow ? "text-destructive" : "text-foreground")}>
-                                                         {p.quantity}
+                                                         <div className="flex items-center gap-3">
+                                                             <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", isLow ? "bg-destructive/15" : "bg-primary/15")}>
+                                                                 <Package className={cn("w-4 h-4", isLow ? "text-destructive" : "text-primary")} />
+                                                             </div>
+                                                             <span className="font-medium text-foreground text-sm">{p.name}</span>
+                                                         </div>
                                                      </td>
-                                                    <td className="p-4 text-center text-sm text-muted-foreground">{p.min_quantity}</td>
-                                                    <td className="p-4 text-right text-sm text-foreground">R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-                                                    <td className="p-4 text-right text-sm font-semibold text-primary">R$ {totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-                                                    <td className="p-4 text-center">
-                                                        {p.quantity <= (p.min_quantity || 1) ? (
-                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-destructive/15 text-destructive">
-                                                              <AlertTriangle className="w-3 h-3" /> Baixo
-                                                            </span>
-                                                          ) : (
-                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-success/15 text-success">
-                                                                OK
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="p-4 text-center">
-                                                         <div className="flex gap-2 justify-center">
-                                                             <Button
-                                                                 size="sm"
-                                                                 variant="outline"
-                                                                 className="border-primary/30 text-primary hover:bg-primary/10"
-                                                                 onClick={() => openQuantityModal(p)}
-                                                             >
-                                                                 Gerenciar
-                                                             </Button>
-                                                             <Button
-                                                                 size="sm"
-                                                                 variant="destructive"
-                                                                 onClick={() => handleDeleteProduct(p.id)}
-                                                             >
-                                                                 <Trash2 className="w-3 h-3" />
-                                                             </Button>
+                                                     <td className="p-4 text-sm text-muted-foreground">{p.category}</td>
+                                                     <td className="p-4 text-sm text-muted-foreground">{p.store || "Loja 1"}</td>
+                                                     <td className="p-4 text-sm text-muted-foreground">{p.supplier || "—"}</td>
+                                                     <td className={cn("p-4 text-center font-bold text-sm", isLow ? "text-destructive" : "text-foreground")}>
+                                                          {p.quantity}
+                                                      </td>
+                                                     <td className="p-4 text-center text-sm text-muted-foreground">{p.min_quantity}</td>
+                                                     <td className="p-4 text-right text-sm text-foreground">R$ {(p.cost_price || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                                     <td className="p-4 text-right text-sm font-semibold text-primary">R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                                     <td className="p-4 text-center">
+                                                         {p.quantity <= (p.min_quantity || 1) ? (
+                                                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-destructive/15 text-destructive">
+                                                               <AlertTriangle className="w-3 h-3" /> Baixo
+                                                             </span>
+                                                           ) : (
+                                                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-success/15 text-success">
+                                                                 OK
+                                                             </span>
+                                                         )}
+                                                     </td>
+                                                     <td className="p-4 text-center">
+                                                          <div className="flex gap-2 justify-center">
+                                                              <Button
+                                                                  size="sm"
+                                                                  variant="outline"
+                                                                  className="border-primary/30 text-primary hover:bg-primary/10"
+                                                                  onClick={() => handleEditProduct(p)}
+                                                              >
+                                                                  <Edit2 className="w-3 h-3 mr-1" />
+                                                                  Editar
+                                                              </Button>
+                                                              <Button
+                                                                  size="sm"
+                                                                  variant="destructive"
+                                                                  onClick={() => openProductDeleteConfirm(p)}
+                                                              >
+                                                                  <Trash2 className="w-3 h-3" />
+                                                              </Button>
                                                          </div>
                                                      </td>
                                                 </motion.tr>
@@ -1612,6 +1713,27 @@ const AdminPanel = () => {
                             )}
                         </DialogContent>
                     </Dialog>
+
+                    {/* AlertDialog para Confirmação de Exclusão de Produto */}
+                    <AlertDialog open={productDeleteConfirmOpen} onOpenChange={setProductDeleteConfirmOpen}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir Produto</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Tem certeza que deseja excluir o produto <span className="font-semibold text-foreground">{productToDelete?.name}</span>? Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <div className="flex gap-3 justify-end">
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={handleDeleteProduct}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                    Excluir
+                                </AlertDialogAction>
+                            </div>
+                        </AlertDialogContent>
+                    </AlertDialog>
                      </div>
                      )}
 
