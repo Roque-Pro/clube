@@ -55,6 +55,10 @@ const Servicos = () => {
     const [actioningAppointmentId, setActioningAppointmentId] = useState<string | null>(null);
     const [isEmployee, setIsEmployee] = useState(false);
     const [accessDenied, setAccessDenied] = useState(false);
+    const [activeTab, setActiveTab] = useState<"pendentes" | "concluidos">("pendentes");
+    const [completeAppointmentDialogOpen, setCompleteAppointmentDialogOpen] = useState(false);
+    const [selectedEmployeeForCompletion, setSelectedEmployeeForCompletion] = useState("");
+    const [appointmentToComplete, setAppointmentToComplete] = useState<Appointment | null>(null);
     const { toast } = useToast();
 
     const [serviceForm, setServiceForm] = useState({
@@ -90,7 +94,7 @@ const Servicos = () => {
             if (session?.user?.email) {
                 const empCheck = empData.data?.some((emp: any) => emp.email === session.user.email);
                 const isAdmin = userRoleData?.data?.role === "admin";
-                
+
                 if (!empCheck && !isAdmin) {
                     setAccessDenied(true);
                     setLoading(false);
@@ -145,7 +149,22 @@ const Servicos = () => {
         }
     };
 
-    const handleCompleteAppointment = async (appointmentId: string, appointment: Appointment) => {
+    const openCompleteAppointmentDialog = (appointment: Appointment) => {
+        setAppointmentToComplete(appointment);
+        setSelectedEmployeeForCompletion("");
+        setCompleteAppointmentDialogOpen(true);
+    };
+
+    const handleCompleteAppointment = async () => {
+        if (!appointmentToComplete || !selectedEmployeeForCompletion) {
+            toast({ title: "Selecione um funcionário", variant: "destructive" });
+            return;
+        }
+
+        const appointmentId = appointmentToComplete.id;
+        const appointment = appointmentToComplete;
+        const selectedEmployee = employees.find((e) => e.id === selectedEmployeeForCompletion);
+
         setActioningAppointmentId(appointmentId);
         try {
             // Atualizar status do agendamento
@@ -164,18 +183,36 @@ const Servicos = () => {
                     client_name: appointment.client_name,
                     item: appointment.service_type,
                     date: new Date().toISOString().split("T")[0],
-                    employee_id: employees[0]?.id || null, // Usar primeiro funcionário como padrão
-                    employee_name: employees[0]?.name || "Não definido",
+                    employee_id: selectedEmployee?.id || null,
+                    employee_name: selectedEmployee?.name || "Não definido",
                     notes: appointment.notes || "",
                 });
 
             if (replError) throw replError;
 
-            // Log da ação
-            logAction("register", "replacements", appointmentId, appointment.client_name, `Agendamento concluído e troca registrada: ${appointment.service_type}`);
+            // Registrar também na tabela services para contar nos indicadores
+            const { error: serviceError } = await supabase
+                .from("services")
+                .insert({
+                    client_id: appointment.client_id,
+                    client_name: appointment.client_name,
+                    service_type: appointment.service_type,
+                    service_date: new Date().toISOString().split("T")[0],
+                    employee_id: selectedEmployee?.id || null,
+                    employee_name: selectedEmployee?.name || "Não definido",
+                    value: 0,
+                    installations: 0,
+                    notes: appointment.notes || "",
+                });
 
+            if (serviceError) throw serviceError;
+
+            // Log da ação
+            logAction("register", "replacements", appointmentId, appointment.client_name, `Agendamento concluído e troca registrada: ${appointment.service_type} - Responsável: ${selectedEmployee?.name}`);
+
+            setCompleteAppointmentDialogOpen(false);
             fetchData();
-            toast({ title: "Serviço concluído e troca registrada!" });
+            toast({ title: "Serviço concluído e registrado com sucesso!" });
         } catch (err: any) {
             toast({
                 title: "Erro ao concluir agendamento",
@@ -282,13 +319,13 @@ const Servicos = () => {
 
             if (data) {
                 setServices([data[0], ...services]);
-                
+
                 // Log da ação
                 logAction("create", "services", data[0].id, clientName, `Serviço: ${serviceForm.serviceType} - R$ ${serviceForm.value}`);
-                
+
                 // Sinaliza que houve uma nova venda para a aba de comissões atualizar
                 localStorage.setItem('serviceCreated', new Date().toISOString());
-                
+
                 toast({ title: "Serviço registrado com sucesso!" });
                 fetchData(); // Recarrega clientes
                 setServiceForm({
@@ -344,8 +381,8 @@ const Servicos = () => {
         : null;
 
     const topSeller = employees.length > 0
-         ? [...employees].sort((a, b) => (b.sales_count || 0) - (a.sales_count || 0))[0]
-         : null;
+        ? [...employees].sort((a, b) => (b.sales_count || 0) - (a.sales_count || 0))[0]
+        : null;
 
     // Top 3 funcionários mais serviços (todos os tempos)
     const employeeServices = services.reduce((acc: { [key: string]: number }, service) => {
@@ -400,60 +437,113 @@ const Servicos = () => {
                     >
                         <h2 className="text-base md:text-lg font-display font-semibold text-foreground mb-4 flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-primary" />
-                            Agendamentos
+                            Serviços
                         </h2>
+
+                        {/* Abas */}
+                        <div className="flex gap-2 mb-4 border-b border-border">
+                            <button
+                                onClick={() => setActiveTab("pendentes")}
+                                className={`px-3 py-2 font-medium border-b-2 transition-colors text-sm ${activeTab === "pendentes"
+                                        ? "border-primary text-primary"
+                                        : "border-transparent text-muted-foreground hover:text-foreground"
+                                    }`}
+                            >
+                                Agendados
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("concluidos")}
+                                className={`px-3 py-2 font-medium border-b-2 transition-colors text-sm ${activeTab === "concluidos"
+                                        ? "border-primary text-primary"
+                                        : "border-transparent text-muted-foreground hover:text-foreground"
+                                    }`}
+                            >
+                                Concluídos
+                            </button>
+                        </div>
+
                         <div className="space-y-3 max-h-96 md:max-h-screen overflow-y-auto">
-                            {appointments.length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-4">Nenhum agendamento pendente</p>
-                            ) : (
-                                appointments
-                                    .filter((apt) => apt.status !== "cancelado")
-                                    .sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime())
-                                    .slice(0, 10)
-                                    .map((apt) => {
-                                        const borderColor = apt.status === "pendente" ? "border-amber-500" : apt.status === "confirmado" ? "border-blue-500" : "border-green-500";
-                                        const bgColor = apt.status === "pendente" ? "bg-amber-50 dark:bg-amber-950/20" : apt.status === "confirmado" ? "bg-blue-50 dark:bg-blue-950/20" : "bg-green-50 dark:bg-green-950/20";
-                                        return (
-                                        <div key={apt.id} className={`p-2 md:p-3 rounded-lg ${bgColor} hover:opacity-80 transition-all border-l-4 ${borderColor}`}>
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="flex-1">
-                                                    <p className="text-sm font-medium text-foreground truncate">{apt.client_name}</p>
-                                                    <p className="text-xs text-muted-foreground">📋 {apt.service_type}</p>
-                                                    {apt.notes && <p className="text-xs text-muted-foreground mt-1">💬 {apt.notes}</p>}
-                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                        📅 {new Date(apt.scheduled_date).toLocaleDateString("pt-BR")} ⏰ {apt.scheduled_time}
-                                                    </p>
+                            {activeTab === "pendentes" ? (
+                                // Abas Agendados (pendente + confirmado)
+                                appointments.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground text-center py-4">Nenhum agendamento</p>
+                                ) : (
+                                    appointments
+                                        .filter((apt) => apt.status !== "cancelado" && apt.status !== "concluído")
+                                        .sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime())
+                                        .map((apt) => {
+                                            const borderColor = apt.status === "pendente" ? "border-amber-500" : "border-blue-500";
+                                            const bgColor = apt.status === "pendente" ? "bg-amber-50 dark:bg-amber-950/20" : "bg-blue-50 dark:bg-blue-950/20";
+                                            return (
+                                                <div key={apt.id} className={`p-2 md:p-3 rounded-lg ${bgColor} hover:opacity-80 transition-all border-l-4 ${borderColor}`}>
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-foreground truncate">{apt.client_name}</p>
+                                                            <p className="text-xs text-muted-foreground">📋 {apt.service_type}</p>
+                                                            {apt.notes && <p className="text-xs text-muted-foreground mt-1">💬 {apt.notes}</p>}
+                                                            <p className="text-xs text-muted-foreground mt-1">
+                                                                📅 {new Date(apt.scheduled_date).toLocaleDateString("pt-BR")} ⏰ {apt.scheduled_time}
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex flex-col gap-1 flex-shrink-0">
+                                                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${apt.status === "pendente" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}>
+                                                                {apt.status === "pendente" ? "⏳ Pendente" : "⏱️ Confirmado"}
+                                                            </span>
+                                                            {apt.status === "pendente" && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    className="text-xs h-7"
+                                                                    onClick={() => handleConfirmAppointment(apt.id, apt)}
+                                                                    disabled={actioningAppointmentId === apt.id}
+                                                                >
+                                                                    <Check className="w-3 h-3" /> Confirmar
+                                                                </Button>
+                                                            )}
+                                                            {apt.status === "confirmado" && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    className="text-xs h-7 bg-success hover:bg-success/90"
+                                                                    onClick={() => openCompleteAppointmentDialog(apt)}
+                                                                    disabled={actioningAppointmentId === apt.id}
+                                                                >
+                                                                    <CheckCircle className="w-3 h-3" /> Concluir
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="flex flex-col gap-1 flex-shrink-0">
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${apt.status === "pendente" ? "bg-amber-100 text-amber-700" : apt.status === "confirmado" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
-                                                        {apt.status === "pendente" ? "⏳ Pendente" : apt.status === "confirmado" ? "⏱️ Confirmado" : "✓ Concluído"}
-                                                    </span>
-                                                    {apt.status === "pendente" && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="text-xs h-7"
-                                                            onClick={() => handleConfirmAppointment(apt.id, apt)}
-                                                            disabled={actioningAppointmentId === apt.id}
-                                                        >
-                                                            <Check className="w-3 h-3" /> Confirmar
-                                                        </Button>
-                                                    )}
-                                                    {apt.status === "confirmado" && (
-                                                        <Button
-                                                            size="sm"
-                                                            className="text-xs h-7 bg-success hover:bg-success/90"
-                                                            onClick={() => handleCompleteAppointment(apt.id, apt)}
-                                                            disabled={actioningAppointmentId === apt.id}
-                                                        >
-                                                            <CheckCircle className="w-3 h-3" /> Concluir
-                                                        </Button>
-                                                    )}
+                                            );
+                                        })
+                                )
+                            ) : (
+                                // Aba Concluídos
+                                appointments.filter((apt) => apt.status === "concluído").length === 0 ? (
+                                    <p className="text-sm text-muted-foreground text-center py-4">Nenhum serviço concluído</p>
+                                ) : (
+                                    appointments
+                                        .filter((apt) => apt.status === "concluído")
+                                        .sort((a, b) => new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime())
+                                        .map((apt) => (
+                                            <div key={apt.id} className="p-2 md:p-3 rounded-lg bg-green-50 dark:bg-green-950/20 hover:opacity-80 transition-all border-l-4 border-green-500">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-medium text-foreground truncate">{apt.client_name}</p>
+                                                        <p className="text-xs text-muted-foreground">📋 {apt.service_type}</p>
+                                                        {apt.notes && <p className="text-xs text-muted-foreground mt-1">💬 {apt.notes}</p>}
+                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                            📅 {new Date(apt.scheduled_date).toLocaleDateString("pt-BR")} ⏰ {apt.scheduled_time}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex flex-col gap-1 flex-shrink-0">
+                                                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-green-100 text-green-700">
+                                                            ✓ Concluído
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        );
-                                    })
+                                        ))
+                                )
                             )}
                         </div>
                     </motion.div>
@@ -489,105 +579,144 @@ const Servicos = () => {
                                             <DialogTitle className="font-display">Registrar Novo Serviço</DialogTitle>
                                         </DialogHeader>
                                         <div className="space-y-4">
-                                        <div>
-                                            <Label>Tipo de Cliente *</Label>
-                                            <Select value={serviceForm.clientType} onValueChange={(v) => setServiceForm({ ...serviceForm, clientType: v as "plano" | "avulso", clientId: "", clientName: "", clientVehicle: "", clientPlate: "" })}>
-                                                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="plano">Cliente de Plano</SelectItem>
-                                                    <SelectItem value="avulso">Cliente Avulso</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        {serviceForm.clientType === "plano" ? (
                                             <div>
-                                                <Label>Cliente *</Label>
-                                                <Select value={serviceForm.clientId} onValueChange={(v) => setServiceForm({ ...serviceForm, clientId: v })}>
+                                                <Label>Tipo de Cliente *</Label>
+                                                <Select value={serviceForm.clientType} onValueChange={(v) => setServiceForm({ ...serviceForm, clientType: v as "plano" | "avulso", clientId: "", clientName: "", clientVehicle: "", clientPlate: "" })}>
                                                     <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                                                     <SelectContent>
-                                                        {clients.map((client) => (
-                                                            <SelectItem key={client.id} value={client.id}>
-                                                                {client.name} ({client.plate})
+                                                        <SelectItem value="plano">Cliente de Plano</SelectItem>
+                                                        <SelectItem value="avulso">Cliente Avulso</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {serviceForm.clientType === "plano" ? (
+                                                <div>
+                                                    <Label>Cliente *</Label>
+                                                    <Select value={serviceForm.clientId} onValueChange={(v) => setServiceForm({ ...serviceForm, clientId: v })}>
+                                                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                                        <SelectContent>
+                                                            {clients.map((client) => (
+                                                                <SelectItem key={client.id} value={client.id}>
+                                                                    {client.name} ({client.plate})
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div>
+                                                        <Label>Nome do Cliente *</Label>
+                                                        <Input
+                                                            value={serviceForm.clientName}
+                                                            onChange={(e) => setServiceForm({ ...serviceForm, clientName: e.target.value })}
+                                                            placeholder="Nome completo"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <Label>Veículo</Label>
+                                                            <Input
+                                                                value={serviceForm.clientVehicle}
+                                                                onChange={(e) => setServiceForm({ ...serviceForm, clientVehicle: e.target.value })}
+                                                                placeholder="Modelo"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <Label>Placa *</Label>
+                                                            <Input
+                                                                value={serviceForm.clientPlate}
+                                                                onChange={(e) => setServiceForm({ ...serviceForm, clientPlate: e.target.value })}
+                                                                placeholder="ABC-1234"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            <div>
+                                                <Label>Tipo de Serviço *</Label>
+                                                <Input
+                                                    value={serviceForm.serviceType}
+                                                    onChange={(e) => setServiceForm({ ...serviceForm, serviceType: e.target.value })}
+                                                    placeholder="Ex: Instalação, Polimento, etc"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label>O que foi feito</Label>
+                                                <Input
+                                                    value={serviceForm.description}
+                                                    onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
+                                                    placeholder="Descrição detalhada do serviço"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <Label>Valor (R$)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={serviceForm.value}
+                                                        onChange={(e) => setServiceForm({ ...serviceForm, value: e.target.value })}
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label>Instalações</Label>
+                                                    <Input
+                                                        type="number"
+                                                        value={serviceForm.installations}
+                                                        onChange={(e) => setServiceForm({ ...serviceForm, installations: e.target.value })}
+                                                        placeholder="0"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <Label>Funcionário *</Label>
+                                                <Select value={serviceForm.employeeId} onValueChange={(v) => setServiceForm({ ...serviceForm, employeeId: v })}>
+                                                    <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {employees.filter((e) => e).map((emp) => (
+                                                            <SelectItem key={emp.id} value={emp.id}>
+                                                                {emp.name}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                        ) : (
-                                            <>
-                                                <div>
-                                                    <Label>Nome do Cliente *</Label>
-                                                    <Input
-                                                        value={serviceForm.clientName}
-                                                        onChange={(e) => setServiceForm({ ...serviceForm, clientName: e.target.value })}
-                                                        placeholder="Nome completo"
-                                                    />
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <Label>Veículo</Label>
-                                                        <Input
-                                                            value={serviceForm.clientVehicle}
-                                                            onChange={(e) => setServiceForm({ ...serviceForm, clientVehicle: e.target.value })}
-                                                            placeholder="Modelo"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <Label>Placa *</Label>
-                                                        <Input
-                                                            value={serviceForm.clientPlate}
-                                                            onChange={(e) => setServiceForm({ ...serviceForm, clientPlate: e.target.value })}
-                                                            placeholder="ABC-1234"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
+                                            <Button
+                                                onClick={handleAddService}
+                                                disabled={submitting}
+                                                className="w-full gradient-primary text-primary-foreground font-semibold"
+                                            >
+                                                {submitting ? "Registrando..." : "Registrar Serviço"}
+                                            </Button>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </motion.div>
 
-                                        <div>
-                                            <Label>Tipo de Serviço *</Label>
-                                            <Input
-                                                value={serviceForm.serviceType}
-                                                onChange={(e) => setServiceForm({ ...serviceForm, serviceType: e.target.value })}
-                                                placeholder="Ex: Instalação, Polimento, etc"
-                                            />
+                        {/* Dialog para Concluir Agendamento */}
+                        <Dialog open={completeAppointmentDialogOpen} onOpenChange={setCompleteAppointmentDialogOpen}>
+                            <DialogContent className="bg-card border-border">
+                                <DialogHeader>
+                                    <DialogTitle className="font-display">Concluir Agendamento</DialogTitle>
+                                </DialogHeader>
+                                {appointmentToComplete && (
+                                    <div className="space-y-4">
+                                        <div className="p-3 bg-muted/50 rounded-lg">
+                                            <p className="text-sm text-muted-foreground mb-1">Cliente</p>
+                                            <p className="font-semibold text-foreground">{appointmentToComplete.client_name}</p>
+                                            <p className="text-sm text-muted-foreground mt-2">Serviço: {appointmentToComplete.service_type}</p>
                                         </div>
                                         <div>
-                                            <Label>O que foi feito</Label>
-                                            <Input
-                                                value={serviceForm.description}
-                                                onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
-                                                placeholder="Descrição detalhada do serviço"
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <Label>Valor (R$)</Label>
-                                                <Input
-                                                    type="number"
-                                                    step="0.01"
-                                                    value={serviceForm.value}
-                                                    onChange={(e) => setServiceForm({ ...serviceForm, value: e.target.value })}
-                                                    placeholder="0.00"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label>Instalações</Label>
-                                                <Input
-                                                    type="number"
-                                                    value={serviceForm.installations}
-                                                    onChange={(e) => setServiceForm({ ...serviceForm, installations: e.target.value })}
-                                                    placeholder="0"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <Label>Funcionário *</Label>
-                                            <Select value={serviceForm.employeeId} onValueChange={(v) => setServiceForm({ ...serviceForm, employeeId: v })}>
+                                            <Label>Funcionário Responsável *</Label>
+                                            <Select value={selectedEmployeeForCompletion} onValueChange={setSelectedEmployeeForCompletion}>
                                                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                                                 <SelectContent>
-                                                    {employees.filter((e) => e).map((emp) => (
+                                                    {employees.map((emp) => (
                                                         <SelectItem key={emp.id} value={emp.id}>
                                                             {emp.name}
                                                         </SelectItem>
@@ -596,17 +725,16 @@ const Servicos = () => {
                                             </Select>
                                         </div>
                                         <Button
-                                            onClick={handleAddService}
-                                            disabled={submitting}
+                                            onClick={handleCompleteAppointment}
+                                            disabled={actioningAppointmentId !== null}
                                             className="w-full gradient-primary text-primary-foreground font-semibold"
                                         >
-                                            {submitting ? "Registrando..." : "Registrar Serviço"}
+                                            {actioningAppointmentId ? "Processando..." : "Concluir Serviço"}
                                         </Button>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
-                            </div>
-                        </motion.div>
+                                    </div>
+                                )}
+                            </DialogContent>
+                        </Dialog>
 
                         {/* Top 3 de Hoje */}
                         <motion.div
@@ -637,16 +765,16 @@ const Servicos = () => {
                                 )}
                             </div>
                         </motion.div>
-                        </div>
+                    </div>
 
-                        {/* Top Performers */}
-                        <motion.div
-                         initial={{ opacity: 0, y: 20 }}
-                         animate={{ opacity: 1, y: 0 }}
-                         transition={{ delay: 0.3 }}
-                         className="glass-card p-3 md:p-6 rounded-lg border border-border"
-                        >
-                         <h3 className="text-base md:text-lg font-display font-semibold text-foreground mb-3 md:mb-4">🏆 Geral</h3>
+                    {/* Top Performers */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="glass-card p-3 md:p-6 rounded-lg border border-border"
+                    >
+                        <h3 className="text-base md:text-lg font-display font-semibold text-foreground mb-3 md:mb-4">🏆 Geral</h3>
 
                         <div className="space-y-3">
                             {top3Employees.map((employee, idx) => (
