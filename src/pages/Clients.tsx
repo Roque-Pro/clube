@@ -166,6 +166,54 @@ const Clients = () => {
 
         setSubmitting(true);
         try {
+            // 0. Validar se email ou CPF já existem
+            console.log("🔍 Validando email e CPF...", { email: form.email, cpf: form.cpf });
+            
+            const [emailCheck, cpfCheck] = await Promise.all([
+                supabase
+                    .from("clients")
+                    .select("id, email")
+                    .eq("email", form.email)
+                    .maybeSingle(),
+                form.cpf ? supabase
+                    .from("clients")
+                    .select("id, cpf")
+                    .eq("cpf", form.cpf)
+                    .maybeSingle() : Promise.resolve({ data: null, error: null })
+            ]);
+
+            console.log("📋 Resultado da validação:", { emailCheck, cpfCheck });
+
+            if (emailCheck.error) {
+                console.warn("⚠️ Erro ao validar email:", emailCheck.error);
+            }
+            
+            if (cpfCheck.error) {
+                console.warn("⚠️ Erro ao validar CPF:", cpfCheck.error);
+            }
+
+            if (emailCheck.data) {
+                console.warn("❌ Email duplicado:", form.email);
+                toast({
+                    title: "Email já cadastrado",
+                    description: `O email "${form.email}" já existe no sistema.`,
+                    variant: "destructive",
+                });
+                setSubmitting(false);
+                return;
+            }
+
+            if (cpfCheck.data) {
+                console.warn("❌ CPF duplicado:", form.cpf);
+                toast({
+                    title: "CPF já cadastrado",
+                    description: `O CPF "${form.cpf}" já está associado a outro cliente.`,
+                    variant: "destructive",
+                });
+                setSubmitting(false);
+                return;
+            }
+
             // Gerar senha padrão se não fornecida
             const password = form.password || `Cliente${form.phone.slice(-4)}`;
 
@@ -243,12 +291,36 @@ const Clients = () => {
                 description: `Email: ${form.email} | Senha: ${password}`
             });
         } catch (error: any) {
-            console.error("Erro ao cadastrar cliente:", error);
-            toast({
-                title: "Erro ao cadastrar cliente",
-                description: error.message,
-                variant: "destructive",
-            });
+            console.error("❌ Erro ao cadastrar cliente:", error);
+            
+            // Tratamento específico para duplicatas
+            if (error.message?.includes("23505") || error.message?.includes("duplicate")) {
+                if (error.message?.includes("cpf")) {
+                    toast({
+                        title: "CPF já cadastrado",
+                        description: `O CPF "${form.cpf}" já existe no sistema.`,
+                        variant: "destructive",
+                    });
+                } else if (error.message?.includes("email")) {
+                    toast({
+                        title: "Email já cadastrado",
+                        description: `O email "${form.email}" já existe no sistema.`,
+                        variant: "destructive",
+                    });
+                } else {
+                    toast({
+                        title: "Dado duplicado",
+                        description: "Este email ou CPF já está cadastrado.",
+                        variant: "destructive",
+                    });
+                }
+            } else {
+                toast({
+                    title: "Erro ao cadastrar cliente",
+                    description: error.message,
+                    variant: "destructive",
+                });
+            }
         } finally {
             setSubmitting(false);
         }

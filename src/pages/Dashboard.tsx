@@ -33,14 +33,17 @@ interface Client {
 }
 
 interface Appointment {
-    id: string;
-    client_id: string;
-    client_name: string;
-    service_type: string;
-    scheduled_date: string;
-    scheduled_time: string;
-    status: string;
-    notes?: string;
+     id: string;
+     client_id: string;
+     client_name: string;
+     service_type: string;
+     scheduled_date: string;
+     scheduled_time: string;
+     status: string;
+     notes?: string;
+     vehicle_id?: string;
+     vehicle?: string;
+     plate?: string;
 }
 
 const Servicos = () => {
@@ -77,13 +80,29 @@ const Servicos = () => {
 
     const fetchData = async () => {
         try {
-            const [empData, servData, clientData, aptData, userRoleData] = await Promise.all([
+            const [empData, servData, clientData, userRoleData] = await Promise.all([
                 supabase.from("employees").select("*").order("name", { ascending: false }),
                 supabase.from("services").select("*").order("service_date", { ascending: false }),
                 supabase.from("clients").select("id, name, vehicle, plate").order("name", { ascending: true }),
-                supabase.from("appointments").select("*").order("scheduled_date", { ascending: true }),
                 session?.user?.id ? supabase.from("user_roles").select("role").eq("user_id", session.user.id).single() : Promise.resolve({ data: null }),
             ]);
+
+            // Fetch appointments with vehicle info
+            const aptData = await supabase
+                .from("appointments")
+                .select(`
+                    id,
+                    client_id,
+                    client_name,
+                    service_type,
+                    scheduled_date,
+                    scheduled_time,
+                    status,
+                    notes,
+                    vehicle_id,
+                    client_vehicles(vehicle, plate)
+                `)
+                .order("scheduled_date", { ascending: true });
 
             if (empData.error) throw empData.error;
             if (servData.error) throw servData.error;
@@ -103,9 +122,16 @@ const Servicos = () => {
                 setIsEmployee(true);
             }
 
+            // Map appointments to include vehicle info
+            const appointmentsWithVehicles = (aptData.data || []).map((apt: any) => ({
+                ...apt,
+                vehicle: apt.client_vehicles?.vehicle,
+                plate: apt.client_vehicles?.plate,
+            }));
+
             setEmployees(empData.data || []);
             setServices(servData.data || []);
-            setAppointments(aptData.data || []);
+            setAppointments(appointmentsWithVehicles);
             setClients(clientData.data || []);
         } catch (error: any) {
             console.error("Erro ao carregar dados:", error);
@@ -134,7 +160,8 @@ const Servicos = () => {
             if (error) throw error;
 
             // Log da ação
-            logAction("update", "appointments", appointmentId, appointment.client_name, `Agendamento confirmado: ${appointment.service_type} para ${new Date(appointment.scheduled_date).toLocaleDateString("pt-BR")} às ${appointment.scheduled_time}`);
+            const vehicleInfo = appointment.vehicle ? ` - ${appointment.vehicle} (${appointment.plate})` : "";
+            logAction("update", "appointments", appointmentId, appointment.client_name, `Agendamento confirmado: ${appointment.service_type}${vehicleInfo} para ${new Date(appointment.scheduled_date).toLocaleDateString("pt-BR")} às ${appointment.scheduled_time}`);
 
             fetchData();
             toast({ title: "Agendamento confirmado!" });
@@ -208,7 +235,8 @@ const Servicos = () => {
             if (serviceError) throw serviceError;
 
             // Log da ação
-            logAction("register", "replacements", appointmentId, appointment.client_name, `Agendamento concluído e troca registrada: ${appointment.service_type} - Responsável: ${selectedEmployee?.name}`);
+            const vehicleInfoComplete = appointment.vehicle ? ` - ${appointment.vehicle} (${appointment.plate})` : "";
+            logAction("register", "replacements", appointmentId, appointment.client_name, `Agendamento concluído e troca registrada: ${appointment.service_type}${vehicleInfoComplete} - Responsável: ${selectedEmployee?.name}`);
 
             setCompleteAppointmentDialogOpen(false);
             fetchData();
@@ -445,8 +473,8 @@ const Servicos = () => {
                             <button
                                 onClick={() => setActiveTab("pendentes")}
                                 className={`px-3 py-2 font-medium border-b-2 transition-colors text-sm ${activeTab === "pendentes"
-                                        ? "border-primary text-primary"
-                                        : "border-transparent text-muted-foreground hover:text-foreground"
+                                    ? "border-primary text-primary"
+                                    : "border-transparent text-muted-foreground hover:text-foreground"
                                     }`}
                             >
                                 Agendados
@@ -454,8 +482,8 @@ const Servicos = () => {
                             <button
                                 onClick={() => setActiveTab("concluidos")}
                                 className={`px-3 py-2 font-medium border-b-2 transition-colors text-sm ${activeTab === "concluidos"
-                                        ? "border-primary text-primary"
-                                        : "border-transparent text-muted-foreground hover:text-foreground"
+                                    ? "border-primary text-primary"
+                                    : "border-transparent text-muted-foreground hover:text-foreground"
                                     }`}
                             >
                                 Concluídos
@@ -478,13 +506,14 @@ const Servicos = () => {
                                                 <div key={apt.id} className={`p-2 md:p-3 rounded-lg ${bgColor} hover:opacity-80 transition-all border-l-4 ${borderColor}`}>
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="flex-1">
-                                                            <p className="text-sm font-medium text-foreground truncate">{apt.client_name}</p>
-                                                            <p className="text-xs text-muted-foreground">📋 {apt.service_type}</p>
-                                                            {apt.notes && <p className="text-xs text-muted-foreground mt-1">💬 {apt.notes}</p>}
-                                                            <p className="text-xs text-muted-foreground mt-1">
-                                                                📅 {new Date(apt.scheduled_date).toLocaleDateString("pt-BR")} ⏰ {apt.scheduled_time}
-                                                            </p>
-                                                        </div>
+                                                             <p className="text-sm font-medium text-foreground truncate">{apt.client_name}</p>
+                                                             <p className="text-xs text-muted-foreground">📋 {apt.service_type}</p>
+                                                             {apt.vehicle && <p className="text-xs text-muted-foreground">🚗 {apt.vehicle} ({apt.plate})</p>}
+                                                             {apt.notes && <p className="text-xs text-muted-foreground mt-1">💬 {apt.notes}</p>}
+                                                             <p className="text-xs text-muted-foreground mt-1">
+                                                                 📅 {new Date(apt.scheduled_date).toLocaleDateString("pt-BR")} ⏰ {apt.scheduled_time}
+                                                             </p>
+                                                         </div>
                                                         <div className="flex flex-col gap-1 flex-shrink-0">
                                                             <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${apt.status === "pendente" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}>
                                                                 {apt.status === "pendente" ? "⏳ Pendente" : "⏱️ Confirmado"}
@@ -528,18 +557,19 @@ const Servicos = () => {
                                             <div key={apt.id} className="p-2 md:p-3 rounded-lg bg-green-50 dark:bg-green-950/20 hover:opacity-80 transition-all border-l-4 border-green-500">
                                                 <div className="flex items-start justify-between gap-2">
                                                     <div className="flex-1">
-                                                        <p className="text-sm font-medium text-foreground truncate">{apt.client_name}</p>
-                                                        <p className="text-xs text-muted-foreground">📋 {apt.service_type}</p>
-                                                        {apt.notes && <p className="text-xs text-muted-foreground mt-1">💬 {apt.notes}</p>}
-                                                        <p className="text-xs text-muted-foreground mt-1">
-                                                            📅 {new Date(apt.scheduled_date).toLocaleDateString("pt-BR")} ⏰ {apt.scheduled_time}
-                                                        </p>
-                                                    </div>
-                                                    <div className="flex flex-col gap-1 flex-shrink-0">
-                                                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-green-100 text-green-700">
-                                                            ✓ Concluído
-                                                        </span>
-                                                    </div>
+                                                         <p className="text-sm font-medium text-foreground truncate">{apt.client_name}</p>
+                                                         <p className="text-xs text-muted-foreground">📋 {apt.service_type}</p>
+                                                         {apt.vehicle && <p className="text-xs text-muted-foreground">🚗 {apt.vehicle} ({apt.plate})</p>}
+                                                         {apt.notes && <p className="text-xs text-muted-foreground mt-1">💬 {apt.notes}</p>}
+                                                         <p className="text-xs text-muted-foreground mt-1">
+                                                             📅 {new Date(apt.scheduled_date).toLocaleDateString("pt-BR")} ⏰ {apt.scheduled_time}
+                                                         </p>
+                                                     </div>
+                                                     <div className="flex flex-col gap-1 flex-shrink-0">
+                                                         <span className="px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-green-100 text-green-700">
+                                                             ✓ Concluído
+                                                         </span>
+                                                     </div>
                                                 </div>
                                             </div>
                                         ))

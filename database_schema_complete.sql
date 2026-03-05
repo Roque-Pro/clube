@@ -37,20 +37,21 @@ CREATE TABLE public.user_roles (
 
 -- Clients (Clientes - Plano/Subscribers)
 CREATE TABLE public.clients (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT NOT NULL UNIQUE,
-  name TEXT NOT NULL,
-  phone TEXT NOT NULL,
-  cpf TEXT UNIQUE,
-  vehicle TEXT NOT NULL,
-  plate TEXT UNIQUE,
-  plan_start DATE NOT NULL DEFAULT CURRENT_DATE,
-  plan_end DATE NOT NULL,
-  replacements_used INTEGER DEFAULT 0,
-  max_replacements INTEGER DEFAULT 3,
-  active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+   user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+   email TEXT NOT NULL UNIQUE,
+   name TEXT NOT NULL,
+   phone TEXT NOT NULL,
+   cpf TEXT UNIQUE,
+   vehicle TEXT NOT NULL,
+   plate TEXT UNIQUE,
+   plan_start DATE NOT NULL DEFAULT CURRENT_DATE,
+   plan_end DATE NOT NULL,
+   replacements_used INTEGER DEFAULT 0,
+   max_replacements INTEGER DEFAULT 3,
+   active BOOLEAN DEFAULT true,
+   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 -- Employees (Funcionarios/Colaboradores)
@@ -97,23 +98,7 @@ CREATE TABLE public.products (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
--- Services (Serviços Realizados)
-CREATE TABLE public.services (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  client_id UUID NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
-  client_name TEXT NOT NULL,
-  vehicle TEXT NOT NULL,
-  plate TEXT NOT NULL,
-  service_type TEXT NOT NULL, -- Tipo de serviço (Instalação, Polimento, etc)
-  description TEXT, -- O que foi feito
-  value DECIMAL(10, 2) NOT NULL DEFAULT 0,
-  employee_id UUID NOT NULL REFERENCES public.employees(id) ON DELETE SET NULL,
-  employee_name TEXT NOT NULL,
-  installations INTEGER DEFAULT 0, -- Quantidade de instalações feitas
-  service_date DATE NOT NULL DEFAULT CURRENT_DATE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
+
 
 -- ============================================
 -- 3. ENABLE ROW LEVEL SECURITY (RLS)

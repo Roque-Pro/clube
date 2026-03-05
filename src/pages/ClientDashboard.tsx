@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Shield, Edit, Save, X, Mail, Phone, User, Car, DollarSign, LogOut, Calendar, Plus, Trash2 } from "lucide-react";
+import { Shield, Edit, Save, X, Mail, Phone, User, Car, DollarSign, LogOut, Calendar, Plus, Trash2, Check, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useVehicleValidation } from "@/hooks/useVehicleValidation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,46 +24,78 @@ interface ClientProfile {
     max_replacements?: number;
 }
 
+interface ClientVehicle {
+     id: string;
+     vehicle: string;
+     plate: string;
+     is_national: boolean;
+     is_primary: boolean;
+}
+
 interface Appointment {
-    id: string;
-    client_id: string;
-    client_name: string;
-    service_type: string;
-    scheduled_date: string;
-    scheduled_time: string;
-    status: string;
-    notes?: string;
+     id: string;
+     client_id: string;
+     client_name: string;
+     service_type: string;
+     scheduled_date: string;
+     scheduled_time: string;
+     status: string;
+     notes?: string;
+     vehicle_id?: string;
 }
 
 const ClientDashboard = () => {
-    const navigate = useNavigate();
-    const { session, loading, user, signOut } = useAuth();
-    const { toast } = useToast();
-    const [clientData, setClientData] = useState<ClientProfile | null>(null);
-    const [dataLoading, setDataLoading] = useState(true);
-    const [editingSection, setEditingSection] = useState<"personal" | "vehicle" | null>(null);
-    const [formData, setFormData] = useState<ClientProfile>({
-        name: "",
-        email: "",
-        phone: "",
-        cpf: "",
-        vehicle: "",
-        plate: "",
-    });
-    const [saving, setSaving] = useState(false);
-    const [appointments, setAppointments] = useState<Appointment[]>([]);
-    const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
-    const [submittingAppointment, setSubmittingAppointment] = useState(false);
-    const [appointmentForm, setAppointmentForm] = useState({
-        service_type: "",
-        scheduled_date: "",
-        scheduled_time: "",
-        notes: "",
-    });
+     const navigate = useNavigate();
+     const { session, loading, user, signOut } = useAuth();
+     const { toast } = useToast();
+     const { validateVehicle, loading: validatingVehicle } = useVehicleValidation();
+     const [clientData, setClientData] = useState<ClientProfile | null>(null);
+     const [dataLoading, setDataLoading] = useState(true);
+     const [editingSection, setEditingSection] = useState<"personal" | "vehicle" | null>(null);
+     const [formData, setFormData] = useState<ClientProfile>({
+         name: "",
+         email: "",
+         phone: "",
+         cpf: "",
+         vehicle: "",
+         plate: "",
+     });
+     const [saving, setSaving] = useState(false);
+     const [appointments, setAppointments] = useState<Appointment[]>([]);
+     const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
+     const [submittingAppointment, setSubmittingAppointment] = useState(false);
+     const [appointmentForm, setAppointmentForm] = useState({
+         service_type: "",
+         scheduled_date: "",
+         scheduled_time: "",
+         notes: "",
+         vehicle_id: "",
+     });
+     const [clientVehicles, setClientVehicles] = useState<ClientVehicle[]>([]);
+     const [addVehicleDialogOpen, setAddVehicleDialogOpen] = useState(false);
+     const [newVehicleForm, setNewVehicleForm] = useState({ vehicle: "", plate: "" });
+     const [validatingNewVehicle, setValidatingNewVehicle] = useState(false);
+     const [validationResult, setValidationResult] = useState<any>(null);
 
     const replacementItems = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Vidro lateral", "Insumo", "Ferramenta", "Outro"];
 
     // All hooks must be called before any conditional logic below
+
+    // Fetch client vehicles
+    const fetchClientVehicles = useCallback(async (clientId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from("client_vehicles")
+                .select("*")
+                .eq("client_id", clientId)
+                .order("is_primary", { ascending: false });
+
+            if (error) throw error;
+            setClientVehicles(data || []);
+        } catch (err) {
+            console.error("Erro ao carregar veículos:", err);
+        }
+    }, []);
 
     // Fetch appointments callback
     const fetchAppointments = useCallback(async (clientId: string) => {
@@ -111,8 +144,9 @@ const ClientDashboard = () => {
             console.log("✅ Cliente encontrado por user_id:", data);
             setClientData(data);
             setFormData(data);
-            // Fetch appointments for this client
+            // Fetch appointments and vehicles for this client
             fetchAppointments(data.id);
+            fetchClientVehicles(data.id);
           } else {
             console.warn("⚠️ Nenhum cliente encontrado para user_id:", userId);
             // Fallback: tentar buscar por email
@@ -128,6 +162,7 @@ const ClientDashboard = () => {
               setClientData(emailData);
               setFormData(emailData);
               fetchAppointments(emailData.id);
+              fetchClientVehicles(emailData.id);
             } else {
               console.warn("⚠️ Nenhum cliente encontrado. Email:", userEmail, "Error:", emailError);
               setClientData(null);
@@ -147,7 +182,7 @@ const ClientDashboard = () => {
         console.warn("⚠️ Session não pronta ou user não autenticado", session?.user);
         setDataLoading(false);
       }
-    }, [session, fetchAppointments]);
+    }, [session, fetchAppointments, fetchClientVehicles]);
 
     // Auto-refresh appointments every 30 seconds
     useEffect(() => {
@@ -162,9 +197,101 @@ const ClientDashboard = () => {
         return () => clearInterval(interval);
     }, [clientData?.id, fetchAppointments]);
 
+    const handleValidateAndAddVehicle = async () => {
+        if (!newVehicleForm.vehicle || !newVehicleForm.plate) {
+            toast({ title: "Preencha veículo e placa", variant: "destructive" });
+            return;
+        }
+
+        if (!clientData) return;
+
+        setValidatingNewVehicle(true);
+        try {
+            const result = await validateVehicle(newVehicleForm.vehicle);
+            
+            if (!result) {
+                toast({ title: "Erro ao validar veículo", variant: "destructive" });
+                return;
+            }
+
+            if (!result.isNational) {
+                toast({
+                    title: "Veículo importado",
+                    description: "Apenas veículos nacionais podem ser adicionados ao plano",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            setValidationResult(result);
+        } catch (err: any) {
+            toast({
+                title: "Erro ao validar",
+                description: err.message,
+                variant: "destructive",
+            });
+        } finally {
+            setValidatingNewVehicle(false);
+        }
+    };
+
+    const handleConfirmAddVehicle = async () => {
+        if (!clientData || !validationResult) return;
+
+        try {
+            const isPrimary = clientVehicles.length === 0;
+            
+            const { error } = await supabase
+                .from("client_vehicles")
+                .insert({
+                    client_id: clientData.id,
+                    vehicle: newVehicleForm.vehicle,
+                    plate: newVehicleForm.plate,
+                    is_national: true,
+                    is_primary: isPrimary,
+                });
+
+            if (error) throw error;
+
+            setNewVehicleForm({ vehicle: "", plate: "" });
+            setValidationResult(null);
+            setAddVehicleDialogOpen(false);
+            fetchClientVehicles(clientData.id);
+            toast({ title: "Veículo adicionado com sucesso!" });
+        } catch (err: any) {
+            toast({
+                title: "Erro ao adicionar veículo",
+                description: err.message,
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleDeleteVehicle = async (vehicleId: string) => {
+        if (!clientData) return;
+
+        try {
+            const { error } = await supabase
+                .from("client_vehicles")
+                .delete()
+                .eq("id", vehicleId);
+
+            if (error) throw error;
+
+            fetchClientVehicles(clientData.id);
+            toast({ title: "Veículo removido" });
+        } catch (err: any) {
+            toast({
+                title: "Erro ao remover veículo",
+                description: err.message,
+                variant: "destructive",
+            });
+        }
+    };
+
     const handleAddAppointment = async () => {
-        if (!appointmentForm.service_type || !appointmentForm.scheduled_date || !appointmentForm.scheduled_time || !clientData) {
-            toast({ title: "Preencha os campos obrigatórios", variant: "destructive" });
+        if (!appointmentForm.service_type || !appointmentForm.scheduled_date || !appointmentForm.scheduled_time || !appointmentForm.vehicle_id || !clientData) {
+            toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
             return;
         }
 
@@ -191,11 +318,12 @@ const ClientDashboard = () => {
                     scheduled_time: appointmentForm.scheduled_time,
                     status: "pendente",
                     notes: appointmentForm.notes,
+                    vehicle_id: appointmentForm.vehicle_id,
                 });
 
             if (error) throw error;
 
-            setAppointmentForm({ service_type: "", scheduled_date: "", scheduled_time: "", notes: "" });
+            setAppointmentForm({ service_type: "", scheduled_date: "", scheduled_time: "", notes: "", vehicle_id: "" });
             setAppointmentDialogOpen(false);
             fetchAppointments(clientData.id);
             toast({ title: "Agendamento realizado com sucesso!" });
@@ -423,13 +551,30 @@ const ClientDashboard = () => {
                                             />
                                         </div>
                                         <div>
-                                            <Label>Observações</Label>
-                                            <Input
-                                                value={appointmentForm.notes}
-                                                onChange={(e) => setAppointmentForm({ ...appointmentForm, notes: e.target.value })}
-                                                placeholder="Algo especial que devemos saber?"
-                                            />
-                                        </div>
+                                             <Label>Veículo *</Label>
+                                             {clientVehicles.length === 0 ? (
+                                                 <p className="text-sm text-red-600 mb-2">Adicione um veículo para continuar</p>
+                                             ) : (
+                                                 <Select value={appointmentForm.vehicle_id} onValueChange={(v) => setAppointmentForm({ ...appointmentForm, vehicle_id: v })}>
+                                                     <SelectTrigger><SelectValue placeholder="Selecione um veículo..." /></SelectTrigger>
+                                                     <SelectContent>
+                                                         {clientVehicles.map((vehicle) => (
+                                                             <SelectItem key={vehicle.id} value={vehicle.id}>
+                                                                 {vehicle.vehicle} - {vehicle.plate}
+                                                             </SelectItem>
+                                                         ))}
+                                                     </SelectContent>
+                                                 </Select>
+                                             )}
+                                         </div>
+                                         <div>
+                                             <Label>Observações</Label>
+                                             <Input
+                                                 value={appointmentForm.notes}
+                                                 onChange={(e) => setAppointmentForm({ ...appointmentForm, notes: e.target.value })}
+                                                 placeholder="Algo especial que devemos saber?"
+                                             />
+                                         </div>
                                         <Button
                                             onClick={handleAddAppointment}
                                             disabled={submittingAppointment}
@@ -483,6 +628,133 @@ const ClientDashboard = () => {
                                         </div>
                                     );
                                 })
+                            )}
+                        </div>
+                    </motion.div>
+
+                    {/* Vehicles Management Section */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.15 }}
+                        className="glass-card p-8 rounded-2xl"
+                    >
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-display font-bold text-foreground flex items-center gap-2">
+                                <Car className="w-5 h-5 text-primary" />
+                                Meus Veículos
+                            </h3>
+                            <Dialog open={addVehicleDialogOpen} onOpenChange={setAddVehicleDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="gap-2">
+                                        <Plus className="w-4 h-4" />
+                                        Adicionar Veículo
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="bg-card border-border">
+                                    <DialogHeader>
+                                        <DialogTitle className="font-display">Adicionar Novo Veículo</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                        {!validationResult ? (
+                                            <>
+                                                <div>
+                                                    <Label>Veículo (marca e modelo) *</Label>
+                                                    <Input
+                                                        value={newVehicleForm.vehicle}
+                                                        onChange={(e) => setNewVehicleForm({ ...newVehicleForm, vehicle: e.target.value })}
+                                                        placeholder="Ex: Honda Civic 2022"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label>Placa *</Label>
+                                                    <Input
+                                                        value={newVehicleForm.plate}
+                                                        onChange={(e) => setNewVehicleForm({ ...newVehicleForm, plate: e.target.value })}
+                                                        placeholder="ABC-1234"
+                                                    />
+                                                </div>
+                                                <Button
+                                                    onClick={handleValidateAndAddVehicle}
+                                                    disabled={validatingNewVehicle}
+                                                    className="w-full"
+                                                >
+                                                    {validatingNewVehicle ? "Verificando..." : "Verificar com IA"}
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                <div className={`p-4 rounded-lg border-2 ${validationResult.isNational ? "border-success bg-success/10" : "border-destructive bg-destructive/10"}`}>
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        {validationResult.isNational ? (
+                                                            <Check className="w-5 h-5 text-success" />
+                                                        ) : (
+                                                            <AlertCircle className="w-5 h-5 text-destructive" />
+                                                        )}
+                                                        <p className="font-semibold">
+                                                            {validationResult.isNational ? "Veículo Nacional ✓" : "Veículo Importado"}
+                                                        </p>
+                                                    </div>
+                                                    <p className="text-sm">{validationResult.message}</p>
+                                                    <p className="text-xs text-muted-foreground mt-2">
+                                                        Marca: {validationResult.brand} | Modelo: {validationResult.model} | Confiança: {Math.round(validationResult.confidence * 100)}%
+                                                    </p>
+                                                </div>
+                                                {validationResult.isNational && (
+                                                    <Button
+                                                        onClick={handleConfirmAddVehicle}
+                                                        className="w-full gap-2"
+                                                    >
+                                                        <Check className="w-4 h-4" />
+                                                        Confirmar e Adicionar
+                                                    </Button>
+                                                )}
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setValidationResult(null);
+                                                        setNewVehicleForm({ vehicle: "", plate: "" });
+                                                    }}
+                                                    className="w-full"
+                                                >
+                                                    Voltar
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+
+                        {/* Vehicles List */}
+                        <div className="space-y-3">
+                            {clientVehicles.length === 0 ? (
+                                <p className="text-sm text-muted-foreground text-center py-8">Nenhum veículo adicionado ainda</p>
+                            ) : (
+                                clientVehicles.map((vehicle) => (
+                                    <div
+                                        key={vehicle.id}
+                                        className="p-4 bg-muted/50 rounded-lg border border-border flex items-center justify-between"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Car className="w-5 h-5 text-primary" />
+                                            <div>
+                                                <p className="font-medium text-foreground">{vehicle.vehicle}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Placa: {vehicle.plate} {vehicle.is_primary && <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-1 rounded">Principal</span>}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleDeleteVehicle(vehicle.id)}
+                                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                ))
                             )}
                         </div>
                     </motion.div>
