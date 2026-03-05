@@ -13,15 +13,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { logAction } from "@/lib/auditLog";
 
 interface Product {
-    id: string;
-    name: string;
-    category: string;
-    quantity: number;
-    min_quantity: number;
-    price: number;
-    supplier: string;
-    cost_price?: number;
-    store?: string;
+     id: string;
+     name: string;
+     category: string;
+     quantity: number;
+     min_quantity: number;
+     price: number;
+     supplier: string;
+     cost_price?: number;
+     store?: string;
+     code?: string;
+     description?: string;
 }
 
 const productCategories = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Vidro lateral", "Insumo", "Ferramenta", "Outro"];
@@ -35,7 +37,7 @@ const Inventory = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
-    const [form, setForm] = useState({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", costPrice: "", store: "Loja 1" });
+    const [form, setForm] = useState({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", costPrice: "", store: "Loja 1", code: "", description: "" });
     const [submitting, setSubmitting] = useState(false);
     const [quantityModalOpen, setQuantityModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -70,7 +72,9 @@ const Inventory = () => {
         (p) =>
             (p.name.toLowerCase().includes(search.toLowerCase()) ||
                 p.category.toLowerCase().includes(search.toLowerCase()) ||
-                p.supplier.toLowerCase().includes(search.toLowerCase())) &&
+                p.supplier.toLowerCase().includes(search.toLowerCase()) ||
+                (p.code && p.code.toLowerCase().includes(search.toLowerCase())) ||
+                (p.description && p.description.toLowerCase().includes(search.toLowerCase()))) &&
             (p.store === selectedStore)
     );
 
@@ -92,6 +96,8 @@ const Inventory = () => {
                     cost_price: parseFloat(form.costPrice) || 0,
                     supplier: form.supplier || "N/A",
                     store: form.store || "Loja 1",
+                    code: form.code || null,
+                    description: form.description || null,
                 })
                 .select();
 
@@ -99,11 +105,11 @@ const Inventory = () => {
 
             // Log da ação
             if (data && data[0]) {
-                logAction("create", "products", data[0].id, form.name, `Categoria: ${form.category} - Qtd: ${form.quantity} - Fornecedor: ${form.supplier || "N/A"}`);
+                logAction("create", "products", data[0].id, form.name, `Código: ${form.code || "N/A"} - Categoria: ${form.category} - Qtd: ${form.quantity} - Fornecedor: ${form.supplier || "N/A"}`);
             }
 
             toast({ title: "Produto cadastrado com sucesso!" });
-            setForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", costPrice: "", store: "Loja 1" });
+            setForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", costPrice: "", store: "Loja 1", code: "", description: "" });
             setDialogOpen(false);
             fetchProducts();
         } catch (error: any) {
@@ -227,33 +233,35 @@ const Inventory = () => {
                                 <DialogTitle className="font-display">Cadastrar Produto</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4">
-                                <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nome do produto" /></div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label>Categoria *</Label>
-                                        <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                                            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                            <SelectContent>{productCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div>
-                                        <Label>Loja *</Label>
-                                        <Select value={form.store} onValueChange={(v) => setForm({ ...form, store: v })}>
-                                            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                            <SelectContent>{stores.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                                <div><Label>Fornecedor</Label><Input value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })} placeholder="Nome do fornecedor" /></div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div><Label>Quantidade *</Label><Input type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></div>
-                                    <div><Label>Qtd Mínima</Label><Input type="number" value={form.minQuantity} onChange={(e) => setForm({ ...form, minQuantity: e.target.value })} /></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div><Label>Preço de Venda (R$)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
-                                    <div><Label>Preço de Custo (R$)</Label><Input type="number" step="0.01" value={form.costPrice} onChange={(e) => setForm({ ...form, costPrice: e.target.value })} placeholder="Valor do fornecedor" /></div>
-                                </div>
-                                <Button onClick={handleAdd} disabled={submitting} className="w-full gradient-primary text-primary-foreground font-semibold">{submitting ? "Salvando..." : "Cadastrar"}</Button>
+                                 <div><Label>Código</Label><Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="Código do produto" /></div>
+                                 <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nome do produto" /></div>
+                                 <div className="grid grid-cols-2 gap-4">
+                                     <div>
+                                         <Label>Categoria *</Label>
+                                         <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                                             <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                             <SelectContent>{productCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                         </Select>
+                                     </div>
+                                     <div>
+                                         <Label>Loja *</Label>
+                                         <Select value={form.store} onValueChange={(v) => setForm({ ...form, store: v })}>
+                                             <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                             <SelectContent>{stores.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                                         </Select>
+                                     </div>
+                                 </div>
+                                 <div><Label>Fornecedor</Label><Input value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })} placeholder="Nome do fornecedor" /></div>
+                                 <div className="grid grid-cols-2 gap-4">
+                                     <div><Label>Quantidade *</Label><Input type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></div>
+                                     <div><Label>Qtd Mínima</Label><Input type="number" value={form.minQuantity} onChange={(e) => setForm({ ...form, minQuantity: e.target.value })} /></div>
+                                 </div>
+                                 <div className="grid grid-cols-2 gap-4">
+                                     <div><Label>Preço de Venda (R$)</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
+                                     <div><Label>Preço de Custo (R$)</Label><Input type="number" step="0.01" value={form.costPrice} onChange={(e) => setForm({ ...form, costPrice: e.target.value })} placeholder="Valor do fornecedor" /></div>
+                                 </div>
+                                 <div><Label>Observação</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Adicione observações sobre o produto" /></div>
+                                 <Button onClick={handleAdd} disabled={submitting} className="w-full gradient-primary text-primary-foreground font-semibold">{submitting ? "Salvando..." : "Cadastrar"}</Button>
                             </div>
                         </DialogContent>
                     </Dialog>
@@ -281,14 +289,6 @@ const Inventory = () => {
                         <thead>
                             <tr className="border-b border-border">
                                 <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produto</th>
-                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Categoria</th>
-                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Loja</th>
-                                <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fornecedor</th>
-                                <th className="text-center p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qtd</th>
-                                <th className="text-right p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Custo</th>
-                                <th className="text-right p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Venda</th>
-                                <th className="text-center p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                                <th className="text-center p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -297,48 +297,68 @@ const Inventory = () => {
                                     const isLow = p.quantity <= p.min_quantity;
                                     return (
                                         <motion.tr
-                                            key={p.id}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            transition={{ delay: i * 0.03 }}
-                                            className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
-                                        >
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", isLow ? "bg-destructive/15" : "bg-primary/15")}>
-                                                        <Package className={cn("w-4 h-4", isLow ? "text-destructive" : "text-primary")} />
-                                                    </div>
-                                                    <span className="font-medium text-foreground text-sm">{p.name}</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-4 text-sm text-muted-foreground">{p.category}</td>
-                                            <td className="p-4 text-sm text-muted-foreground">{p.store || "—"}</td>
-                                            <td className="p-4 text-sm text-muted-foreground">{p.supplier || "—"}</td>
-                                            <td className={cn("p-4 text-center font-bold text-sm", isLow ? "text-destructive" : "text-foreground")}>{p.quantity}</td>
-                                            <td className="p-4 text-right text-sm text-foreground">R$ {(p.cost_price || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-                                            <td className="p-4 text-right text-sm text-foreground">R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-                                            <td className="p-4 text-center">
-                                                {isLow ? (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-destructive/15 text-destructive">
-                                                        <AlertTriangle className="w-3 h-3" /> Baixo
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-success/15 text-success">
-                                                        OK
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="p-4 text-center">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="border-primary/30 text-primary hover:bg-primary/10"
-                                                    onClick={() => openQuantityModal(p)}
-                                                >
-                                                    Gerenciar
-                                                </Button>
-                                            </td>
-                                        </motion.tr>
+                                             key={p.id}
+                                             initial={{ opacity: 0 }}
+                                             animate={{ opacity: 1 }}
+                                             transition={{ delay: i * 0.03 }}
+                                             className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
+                                         >
+                                             <td className="p-4" colSpan={9}>
+                                                 <div className="flex items-start justify-between gap-3 w-full">
+                                                     <div className="flex items-start gap-3 flex-1">
+                                                         <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5", isLow ? "bg-destructive/15" : "bg-primary/15")}>
+                                                             <Package className={cn("w-4 h-4", isLow ? "text-destructive" : "text-primary")} />
+                                                         </div>
+                                                         <div className="flex-1 min-w-0">
+                                                             <div className="flex items-center gap-2">
+                                                                 <span className="font-medium text-foreground text-sm">{p.name}</span>
+                                                                 {p.code && (
+                                                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+                                                                         <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                                                         {p.code}
+                                                                     </span>
+                                                                 )}
+                                                             </div>
+                                                             <div className="grid grid-cols-4 gap-4 text-xs text-muted-foreground mt-2">
+                                                                 <div><span className="font-medium">Cat:</span> {p.category}</div>
+                                                                 <div><span className="font-medium">Loja:</span> {p.store || "—"}</div>
+                                                                 <div><span className="font-medium">Forn:</span> {p.supplier || "—"}</div>
+                                                                 <div className={cn("font-bold", isLow ? "text-destructive" : "text-foreground")}><span className="font-medium">Qtd:</span> {p.quantity}</div>
+                                                             </div>
+                                                             <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground mt-2">
+                                                                 <div><span className="font-medium">Custo:</span> R$ {(p.cost_price || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                                                                 <div><span className="font-medium">Venda:</span> R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                                                             </div>
+                                                             {p.description && (
+                                                                 <div className="mt-2 flex items-start gap-2">
+                                                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-600 border border-blue-500/30 flex-shrink-0">
+                                                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                                                         Descrição
+                                                                     </span>
+                                                                     <p className="text-xs text-muted-foreground italic">{p.description}</p>
+                                                                 </div>
+                                                             )}
+                                                             {isLow && <p className="text-xs text-destructive mt-2 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Estoque baixo!</p>}
+                                                         </div>
+                                                     </div>
+                                                     <div className="flex items-center gap-2 flex-shrink-0">
+                                                         {!isLow && (
+                                                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-success/15 text-success whitespace-nowrap">
+                                                                 OK
+                                                             </span>
+                                                         )}
+                                                         <Button
+                                                             size="sm"
+                                                             variant="outline"
+                                                             className="border-primary/30 text-primary hover:bg-primary/10 whitespace-nowrap"
+                                                             onClick={() => openQuantityModal(p)}
+                                                         >
+                                                             Gerenciar
+                                                         </Button>
+                                                     </div>
+                                                 </div>
+                                             </td>
+                                         </motion.tr>
                                     );
                                 })}
                             </AnimatePresence>

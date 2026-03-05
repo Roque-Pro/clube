@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { logAction } from "@/lib/auditLog";
 import { SalesCommissionsTab } from "@/components/SalesCommissionsTab";
+import { FinancialAuthModal } from "@/components/FinancialAuthModal";
 
 interface Employee {
   id: string;
@@ -29,15 +30,17 @@ interface Employee {
 }
 
 interface Product {
-    id: string;
-    name: string;
-    category: string;
-    quantity: number;
-    min_quantity: number;
-    price: number;
-    supplier: string;
-    store?: string;
-    cost_price?: number;
+     id: string;
+     name: string;
+     category: string;
+     quantity: number;
+     min_quantity: number;
+     price: number;
+     supplier: string;
+     store?: string;
+     cost_price?: number;
+     code?: string;
+     description?: string;
 }
 
 interface Asset {
@@ -76,7 +79,7 @@ const AdminPanel = () => {
      const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
      const [empToDelete, setEmpToDelete] = useState<Employee | null>(null);
      const [invDialogOpen, setInvDialogOpen] = useState(false);
-     const [invForm, setInvForm] = useState({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "Loja 1", costPrice: "" });
+     const [invForm, setInvForm] = useState({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "Loja 1", costPrice: "", code: "", description: "" });
      const [editingProduct, setEditingProduct] = useState<Product | null>(null);
      const [productDeleteConfirmOpen, setProductDeleteConfirmOpen] = useState(false);
      const [productToDelete, setProductToDelete] = useState<Product | null>(null);
@@ -90,6 +93,8 @@ const AdminPanel = () => {
      const [quantityModalOpen, setQuantityModalOpen] = useState(false);
      const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
      const [quantityChange, setQuantityChange] = useState("");
+     const [financialAuthOpen, setFinancialAuthOpen] = useState(false);
+     const [financialAuthenticated, setFinancialAuthenticated] = useState(false);
 
     const fetchEmployees = async () => {
         try {
@@ -196,6 +201,12 @@ const AdminPanel = () => {
         setLoading(false);
       };
       loadData();
+    }, []);
+
+    // Verificar se já está autenticado na sessão
+    useEffect(() => {
+      const isAuthenticated = sessionStorage.getItem("financial_auth") === "true";
+      setFinancialAuthenticated(isAuthenticated);
     }, []);
 
     const filtered = employees.filter(
@@ -512,11 +523,13 @@ const AdminPanel = () => {
                         supplier: invForm.supplier || "N/A",
                         store: invForm.store || "Loja 1",
                         cost_price: parseFloat(invForm.costPrice) || 0,
+                        code: invForm.code || null,
+                        description: invForm.description || null,
                     })
                     .eq("id", editingProduct.id);
 
                 if (error) throw error;
-                logAction("update", "products", editingProduct.id, editingProduct.name, `Atualizado: ${invForm.name}`);
+                logAction("update", "products", editingProduct.id, editingProduct.name, `Atualizado: ${invForm.name} - Código: ${invForm.code || "N/A"}`);
                 toast({ title: "Produto atualizado com sucesso!" });
             } else {
                 // Criar novo produto
@@ -531,16 +544,18 @@ const AdminPanel = () => {
                         supplier: invForm.supplier || "N/A",
                         store: invForm.store || "Loja 1",
                         cost_price: parseFloat(invForm.costPrice) || 0,
+                        code: invForm.code || null,
+                        description: invForm.description || null,
                     })
                     .select();
 
                 if (error) throw error;
                 if (data && data[0]) {
-                    logAction("create", "products", data[0].id, invForm.name, `Categoria: ${invForm.category} - Loja: ${invForm.store}`);
+                    logAction("create", "products", data[0].id, invForm.name, `Código: ${invForm.code || "N/A"} - Categoria: ${invForm.category} - Loja: ${invForm.store}`);
                 }
                 toast({ title: "Produto cadastrado com sucesso!" });
             }
-            setInvForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "Loja 1", costPrice: "" });
+            setInvForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "Loja 1", costPrice: "", code: "", description: "" });
             setEditingProduct(null);
             setInvDialogOpen(false);
             fetchProducts();
@@ -566,6 +581,8 @@ const AdminPanel = () => {
             supplier: product.supplier || "",
             store: product.store || "Loja 1",
             costPrice: (product.cost_price || 0).toString(),
+            code: product.code || "",
+            description: product.description || "",
         });
         setInvDialogOpen(true);
     };
@@ -868,7 +885,13 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
             <div className="mb-6 overflow-x-auto">
               <div className="flex gap-2 border-b border-border min-w-max">
                 <button
-                  onClick={() => setActiveTab("employees")}
+                  onClick={() => {
+                    // Limpar autenticação ao sair da aba Financeiro
+                    sessionStorage.removeItem("financial_auth");
+                    sessionStorage.removeItem("financial_auth_time");
+                    setFinancialAuthenticated(false);
+                    setActiveTab("employees");
+                  }}
                   className={cn(
                     "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
                     activeTab === "employees"
@@ -879,7 +902,13 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                   Funcionários
                 </button>
                 <button
-                  onClick={() => setActiveTab("inventory")}
+                  onClick={() => {
+                    // Limpar autenticação ao sair da aba Financeiro
+                    sessionStorage.removeItem("financial_auth");
+                    sessionStorage.removeItem("financial_auth_time");
+                    setFinancialAuthenticated(false);
+                    setActiveTab("inventory");
+                  }}
                   className={cn(
                     "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
                     activeTab === "inventory"
@@ -890,7 +919,13 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                   Inventário
                 </button>
                 <button
-                  onClick={() => setActiveTab("patrimonio")}
+                  onClick={() => {
+                    // Limpar autenticação ao sair da aba Financeiro
+                    sessionStorage.removeItem("financial_auth");
+                    sessionStorage.removeItem("financial_auth_time");
+                    setFinancialAuthenticated(false);
+                    setActiveTab("patrimonio");
+                  }}
                   className={cn(
                     "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
                     activeTab === "patrimonio"
@@ -901,18 +936,30 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                   Patrimônio
                 </button>
                 <button
-                  onClick={() => setActiveTab("financial")}
-                  className={cn(
-                    "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
-                    activeTab === "financial"
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Financeiro
-                </button>
-                <button
-                  onClick={() => setActiveTab("comissoes")}
+                   onClick={() => {
+                     if (financialAuthenticated) {
+                       setActiveTab("financial");
+                     } else {
+                       setFinancialAuthOpen(true);
+                     }
+                   }}
+                   className={cn(
+                     "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
+                     activeTab === "financial"
+                       ? "border-primary text-primary"
+                       : "border-transparent text-muted-foreground hover:text-foreground"
+                   )}
+                 >
+                   Financeiro 🔒
+                 </button>
+                 <button
+                   onClick={() => {
+                     // Limpar autenticação ao sair da aba Financeiro
+                     sessionStorage.removeItem("financial_auth");
+                     sessionStorage.removeItem("financial_auth_time");
+                     setFinancialAuthenticated(false);
+                     setActiveTab("comissoes");
+                   }}
                   className={cn(
                     "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
                     activeTab === "comissoes"
@@ -1288,93 +1335,56 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
 
             {/* SEÇÃO INVENTÁRIO */}
             {activeTab === "inventory" && (
-                <div>
-                    {/* Cards de Resumo */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                        {/* Total de Produtos */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="glass-card p-6 rounded-lg border border-border"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground mb-1">Total de Produtos</p>
-                                    <p className="text-3xl font-bold text-foreground">{totalProducts}</p>
-                                </div>
-                                <div className="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center">
-                                    <Barcode className="w-6 h-6 text-primary" />
-                                </div>
-                            </div>
-                        </motion.div>
+                 <div>
+                     {/* Cards de Resumo */}
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                         {/* Total de Produtos */}
+                         <motion.div
+                             initial={{ opacity: 0, y: 20 }}
+                             animate={{ opacity: 1, y: 0 }}
+                             className="glass-card p-6 rounded-lg border border-border"
+                         >
+                             <div className="flex items-center justify-between">
+                                 <div>
+                                     <p className="text-sm text-muted-foreground mb-1">Total de Produtos</p>
+                                     <p className="text-3xl font-bold text-foreground">{totalProducts}</p>
+                                 </div>
+                                 <div className="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center">
+                                     <Barcode className="w-6 h-6 text-primary" />
+                                 </div>
+                             </div>
+                         </motion.div>
 
-                        {/* Valor Total em Estoque */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="glass-card p-6 rounded-lg border border-border"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground mb-1">Valor Total em Estoque</p>
-                                    <p className="text-2xl font-bold text-primary">R$ {totalInventoryValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                                </div>
-                                <div className="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center">
-                                    <Package className="w-6 h-6 text-primary" />
-                                </div>
-                            </div>
-                        </motion.div>
-
-                        {/* Produtos com Baixo Estoque */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2 }}
-                          className="glass-card p-6 rounded-lg border border-border"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-1">Baixo Estoque</p>
-                              <p className={cn("text-3xl font-bold", lowStockProducts.length > 0 ? "text-destructive" : "text-foreground")}>
-                                {lowStockProducts.length}
-                              </p>
-                              {lowStockProducts.length > 0 && (
-                                <div className="mt-2 space-y-1">
-                                  {lowStockProducts.slice(0, 2).map(p => (
-                                    <p key={p.id} className="text-xs text-destructive">• {p.name}</p>
-                                  ))}
-                                  {lowStockProducts.length > 2 && (
-                                    <p className="text-xs text-muted-foreground">+{lowStockProducts.length - 2} mais</p>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                            <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", lowStockProducts.length > 0 ? "bg-destructive/15" : "bg-success/15")}>
-                              <AlertTriangle className={cn("w-6 h-6", lowStockProducts.length > 0 ? "text-destructive" : "text-success")} />
-                            </div>
-                          </div>
-                        </motion.div>
-
-                        {/* Categoria Mais Valiosa */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.3 }}
-                          className="glass-card p-6 rounded-lg border border-border"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-1">Top Categoria</p>
-                              <p className="text-lg font-bold text-foreground">{topCategory?.[0] || "—"}</p>
-                              <p className="text-sm text-primary mt-1">R$ {topCategory?.[1]?.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) || "0"}</p>
-                            </div>
-                            <div className="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center">
-                              <TrendingDown className="w-6 h-6 text-primary" />
-                            </div>
-                          </div>
-                        </motion.div>
-                        </div>
+                         {/* Produtos com Baixo Estoque */}
+                         <motion.div
+                           initial={{ opacity: 0, y: 20 }}
+                           animate={{ opacity: 1, y: 0 }}
+                           transition={{ delay: 0.1 }}
+                           className="glass-card p-6 rounded-lg border border-border"
+                         >
+                           <div className="flex items-center justify-between">
+                             <div>
+                               <p className="text-sm text-muted-foreground mb-1">Baixo Estoque</p>
+                               <p className={cn("text-3xl font-bold", lowStockProducts.length > 0 ? "text-destructive" : "text-foreground")}>
+                                 {lowStockProducts.length}
+                               </p>
+                               {lowStockProducts.length > 0 && (
+                                 <div className="mt-2 space-y-1">
+                                   {lowStockProducts.slice(0, 2).map(p => (
+                                     <p key={p.id} className="text-xs text-destructive">• {p.name}</p>
+                                   ))}
+                                   {lowStockProducts.length > 2 && (
+                                     <p className="text-xs text-muted-foreground">+{lowStockProducts.length - 2} mais</p>
+                                   )}
+                                 </div>
+                               )}
+                             </div>
+                             <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", lowStockProducts.length > 0 ? "bg-destructive/15" : "bg-success/15")}>
+                               <AlertTriangle className={cn("w-6 h-6", lowStockProducts.length > 0 ? "text-destructive" : "text-success")} />
+                             </div>
+                           </div>
+                         </motion.div>
+                         </div>
 
                         {/* Cards Adicionais de Análise */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -1453,15 +1463,23 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                                      <DialogTitle className="font-display">{editingProduct ? "Editar Produto" : "Cadastrar Produto"}</DialogTitle>
                                  </DialogHeader>
                                  <div className="space-y-4">
-                                     <div>
-                                         <Label>Nome *</Label>
-                                         <Input
-                                             value={invForm.name}
-                                             onChange={(e) => setInvForm({ ...invForm, name: e.target.value })}
-                                             placeholder="Nome do produto"
-                                             disabled={editingProduct ? false : false}
-                                         />
-                                     </div>
+                                      <div>
+                                          <Label>Código</Label>
+                                          <Input
+                                              value={invForm.code}
+                                              onChange={(e) => setInvForm({ ...invForm, code: e.target.value })}
+                                              placeholder="Código do produto"
+                                          />
+                                      </div>
+                                      <div>
+                                          <Label>Nome *</Label>
+                                          <Input
+                                              value={invForm.name}
+                                              onChange={(e) => setInvForm({ ...invForm, name: e.target.value })}
+                                              placeholder="Nome do produto"
+                                              disabled={editingProduct ? false : false}
+                                          />
+                                      </div>
                                      <div className="grid grid-cols-2 gap-4">
                                          <div>
                                              <Label>Categoria *</Label>
@@ -1542,6 +1560,14 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                                              />
                                          </div>
                                      </div>
+                                     <div>
+                                         <Label>Observação</Label>
+                                         <Input
+                                             value={invForm.description}
+                                             onChange={(e) => setInvForm({ ...invForm, description: e.target.value })}
+                                             placeholder="Adicione observações sobre o produto"
+                                         />
+                                     </div>
                                      <div className="flex gap-3">
                                          <Button
                                              onClick={handleAddProduct}
@@ -1554,7 +1580,7 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                                              <Button
                                                  onClick={() => {
                                                      setEditingProduct(null);
-                                                     setInvForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "Loja 1", costPrice: "" });
+                                                     setInvForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "Loja 1", costPrice: "", code: "", description: "" });
                                                      setInvDialogOpen(false);
                                                  }}
                                                  variant="outline"
@@ -1575,85 +1601,96 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                             <thead>
                                 <tr className="border-b border-border">
                                     <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produto</th>
-                                    <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Categoria</th>
-                                    <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Loja</th>
-                                    <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fornecedor</th>
-                                    <th className="text-center p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qtd</th>
-                                    <th className="text-center p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mín</th>
-                                    <th className="text-right p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Custo</th>
-                                    <th className="text-right p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Venda</th>
-                                    <th className="text-center p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                                    <th className="text-center p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <AnimatePresence>
                                     {products
-                                        .filter(
-                                            (p) =>
-                                                p.name.toLowerCase().includes(search.toLowerCase()) ||
-                                                p.category.toLowerCase().includes(search.toLowerCase())
-                                        )
+                                         .filter(
+                                             (p) =>
+                                                 p.name.toLowerCase().includes(search.toLowerCase()) ||
+                                                 p.category.toLowerCase().includes(search.toLowerCase()) ||
+                                                 (p.code && p.code.toLowerCase().includes(search.toLowerCase())) ||
+                                                 (p.description && p.description.toLowerCase().includes(search.toLowerCase()))
+                                         )
                                         .map((p, i) => {
                                           const isLow = p.quantity <= (p.min_quantity || 1);
                                           const totalValue = p.quantity * p.price;
                                             return (
                                                 <motion.tr
-                                                    key={p.id}
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    transition={{ delay: i * 0.03 }}
-                                                    className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
-                                                >
-                                                    <td className="p-4">
-                                                         <div className="flex items-center gap-3">
-                                                             <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", isLow ? "bg-destructive/15" : "bg-primary/15")}>
-                                                                 <Package className={cn("w-4 h-4", isLow ? "text-destructive" : "text-primary")} />
+                                                     key={p.id}
+                                                     initial={{ opacity: 0 }}
+                                                     animate={{ opacity: 1 }}
+                                                     transition={{ delay: i * 0.03 }}
+                                                     className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
+                                                 >
+                                                     <td className="p-4" colSpan={10}>
+                                                         <div className="flex items-start justify-between gap-3 w-full">
+                                                             <div className="flex items-start gap-3 flex-1">
+                                                                 <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5", isLow ? "bg-destructive/15" : "bg-primary/15")}>
+                                                                     <Package className={cn("w-4 h-4", isLow ? "text-destructive" : "text-primary")} />
+                                                                 </div>
+                                                                 <div className="flex-1 min-w-0">
+                                                                     <div className="flex items-center gap-2">
+                                                                         <span className="font-medium text-foreground text-sm">{p.name}</span>
+                                                                         {p.code && (
+                                                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+                                                                                 <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                                                                 {p.code}
+                                                                             </span>
+                                                                         )}
+                                                                     </div>
+                                                                     <div className="grid grid-cols-5 gap-4 text-xs text-muted-foreground mt-2">
+                                                                         <div><span className="font-medium">Cat:</span> {p.category}</div>
+                                                                         <div><span className="font-medium">Loja:</span> {p.store || "Loja 1"}</div>
+                                                                         <div><span className="font-medium">Forn:</span> {p.supplier || "—"}</div>
+                                                                         <div className={cn("font-bold", isLow ? "text-destructive" : "text-foreground")}><span className="font-medium">Qtd:</span> {p.quantity}</div>
+                                                                         <div><span className="font-medium">Mín:</span> {p.min_quantity}</div>
+                                                                     </div>
+                                                                     <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground mt-2">
+                                                                         <div><span className="font-medium">Custo:</span> R$ {(p.cost_price || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                                                                         <div><span className="font-medium">Venda:</span> R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                                                                     </div>
+                                                                     {p.description && (
+                                                                         <div className="mt-2 flex items-start gap-2">
+                                                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-600 border border-blue-500/30 flex-shrink-0">
+                                                                                 <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                                                                 Descrição
+                                                                             </span>
+                                                                             <p className="text-xs text-muted-foreground italic">{p.description}</p>
+                                                                         </div>
+                                                                     )}
+                                                                     {isLow && <p className="text-xs text-destructive mt-2 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Estoque baixo!</p>}
+                                                                 </div>
                                                              </div>
-                                                             <span className="font-medium text-foreground text-sm">{p.name}</span>
+                                                             <div className="flex items-center gap-2 flex-shrink-0">
+                                                                 {!isLow && (
+                                                                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-success/15 text-success whitespace-nowrap">
+                                                                         OK
+                                                                     </span>
+                                                                 )}
+                                                                 <div className="flex gap-2">
+                                                                     <Button
+                                                                         size="sm"
+                                                                         variant="outline"
+                                                                         className="border-primary/30 text-primary hover:bg-primary/10"
+                                                                         onClick={() => handleEditProduct(p)}
+                                                                     >
+                                                                         <Edit2 className="w-3 h-3 mr-1" />
+                                                                         Editar
+                                                                     </Button>
+                                                                     <Button
+                                                                         size="sm"
+                                                                         variant="destructive"
+                                                                         onClick={() => openProductDeleteConfirm(p)}
+                                                                     >
+                                                                         <Trash2 className="w-3 h-3" />
+                                                                     </Button>
+                                                                 </div>
+                                                             </div>
                                                          </div>
                                                      </td>
-                                                     <td className="p-4 text-sm text-muted-foreground">{p.category}</td>
-                                                     <td className="p-4 text-sm text-muted-foreground">{p.store || "Loja 1"}</td>
-                                                     <td className="p-4 text-sm text-muted-foreground">{p.supplier || "—"}</td>
-                                                     <td className={cn("p-4 text-center font-bold text-sm", isLow ? "text-destructive" : "text-foreground")}>
-                                                          {p.quantity}
-                                                      </td>
-                                                     <td className="p-4 text-center text-sm text-muted-foreground">{p.min_quantity}</td>
-                                                     <td className="p-4 text-right text-sm text-foreground">R$ {(p.cost_price || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-                                                     <td className="p-4 text-right text-sm font-semibold text-primary">R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-                                                     <td className="p-4 text-center">
-                                                         {p.quantity <= (p.min_quantity || 1) ? (
-                                                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-destructive/15 text-destructive">
-                                                               <AlertTriangle className="w-3 h-3" /> Baixo
-                                                             </span>
-                                                           ) : (
-                                                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-success/15 text-success">
-                                                                 OK
-                                                             </span>
-                                                         )}
-                                                     </td>
-                                                     <td className="p-4 text-center">
-                                                          <div className="flex gap-2 justify-center">
-                                                              <Button
-                                                                  size="sm"
-                                                                  variant="outline"
-                                                                  className="border-primary/30 text-primary hover:bg-primary/10"
-                                                                  onClick={() => handleEditProduct(p)}
-                                                              >
-                                                                  <Edit2 className="w-3 h-3 mr-1" />
-                                                                  Editar
-                                                              </Button>
-                                                              <Button
-                                                                  size="sm"
-                                                                  variant="destructive"
-                                                                  onClick={() => openProductDeleteConfirm(p)}
-                                                              >
-                                                                  <Trash2 className="w-3 h-3" />
-                                                              </Button>
-                                                         </div>
-                                                     </td>
-                                                </motion.tr>
+                                                 </motion.tr>
                                             );
                                         })}
                                 </AnimatePresence>
@@ -1927,6 +1964,59 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                   <SelectItem value="all_time">Todo o Período</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          {/* SEÇÃO DE RESUMO - CONSOLIDADO DO SISTEMA */}
+          <div className="glass-card border border-primary/30 bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-6 mb-8">
+            <h3 className="text-lg font-semibold mb-4 text-foreground">📊 Resumo Consolidado do Sistema</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Total de Vendas (vindo da aba Vendas) */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-card p-4 rounded-lg border border-success/30 bg-gradient-to-br from-success/10 to-transparent"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">💰 Total de Vendas</p>
+                    <p className="text-2xl font-bold text-success">R$ {(
+                      sales.reduce((sum, s) => sum + (s.amount || 0), 0)
+                    ).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Valor Total em Estoque (vindo da aba Inventário) */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="glass-card p-4 rounded-lg border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-transparent"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">📦 Valor Total em Estoque</p>
+                    <p className="text-2xl font-bold text-orange-500">R$ {totalInventoryValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Top Categoria (vindo da aba Inventário) */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="glass-card p-4 rounded-lg border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">🏆 Top Categoria</p>
+                    <p className="text-lg font-bold text-foreground">{topCategory?.[0] || "—"}</p>
+                    <p className="text-sm text-primary mt-1">R$ {topCategory?.[1]?.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) || "0"}</p>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
 
@@ -2443,11 +2533,24 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
         )}
 
         {/* SEÇÃO COMISSÕES DE VENDEDORES */}
-        {activeTab === "comissoes" && (
-        <SalesCommissionsTab />
-        )}
-        </div>
-        );
-        };
-
-export default AdminPanel;
+         {activeTab === "comissoes" && (
+         <SalesCommissionsTab />
+         )}
+         
+         {/* Financial Authentication Modal */}
+         <FinancialAuthModal
+           isOpen={financialAuthOpen}
+           onAuthSuccess={() => {
+             setFinancialAuthOpen(false);
+             setFinancialAuthenticated(true);
+             setActiveTab("financial");
+           }}
+           onClose={() => {
+             setFinancialAuthOpen(false);
+           }}
+         />
+         </div>
+         );
+         };
+        
+        export default AdminPanel;
