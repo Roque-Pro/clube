@@ -269,9 +269,9 @@ const Inventory = () => {
                                  </div>
                                  <div><Label>Observação</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Adicione observações sobre o produto" /></div>
                                  <Button onClick={handleAdd} disabled={submitting} className="w-full gradient-primary text-primary-foreground font-semibold">{submitting ? "Salvando..." : "Cadastrar"}</Button>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
+                                 </div>
+                                 </DialogContent>
+                                 </Dialog>
                 }
             />
 
@@ -400,24 +400,24 @@ const Inventory = () => {
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
-                                <Button
-                                    onClick={handleAddStock}
-                                    className="gradient-primary text-primary-foreground font-semibold gap-2"
-                                >
-                                    ➕ Adicionar (Compra)
-                                </Button>
-                                <Button
-                                    onClick={handleRemoveStock}
-                                    variant="destructive"
-                                    className="font-semibold gap-2"
-                                >
-                                    ➖ Remover (Venda)
-                                </Button>
+                                 <Button
+                                     onClick={handleAddStock}
+                                     className="gradient-primary text-primary-foreground font-semibold gap-2"
+                                 >
+                                     ➕ Adicionar (Compra)
+                                 </Button>
+                                 <Button
+                                     onClick={handleRemoveStock}
+                                     variant="destructive"
+                                     className="font-semibold gap-2"
+                                 >
+                                     ➖ Remover (Venda)
+                                 </Button>
+                             </div>
                             </div>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
+                            )}
+                            </DialogContent>
+                            </Dialog>
         </div>
     );
 };

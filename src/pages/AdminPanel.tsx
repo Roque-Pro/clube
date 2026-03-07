@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, UserCog, Phone, Mail, Plus, Edit2, Trash2, Package, AlertTriangle, TrendingDown, Barcode } from "lucide-react";
+import { Search, UserCog, Phone, Mail, Plus, Edit2, Trash2, Package, AlertTriangle, TrendingDown, Barcode, FileText, Shuffle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PageHeader from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 import { logAction } from "@/lib/auditLog";
 import { SalesCommissionsTab } from "@/components/SalesCommissionsTab";
 import { FinancialAuthModal } from "@/components/FinancialAuthModal";
+import { ProductDocumentsTab } from "@/components/ProductDocumentsTab";
+import { RearrangeProductModal } from "@/components/RearrangeProductModal";
 
 interface Employee {
   id: string;
@@ -95,6 +97,10 @@ const AdminPanel = () => {
      const [quantityChange, setQuantityChange] = useState("");
      const [financialAuthOpen, setFinancialAuthOpen] = useState(false);
      const [financialAuthenticated, setFinancialAuthenticated] = useState(false);
+     const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
+     const [productForDocuments, setProductForDocuments] = useState<Product | null>(null);
+     const [rearrangeModalOpen, setRearrangeModalOpen] = useState(false);
+     const [productForRearrange, setProductForRearrange] = useState<Product | null>(null);
 
     const fetchEmployees = async () => {
         try {
@@ -918,23 +924,24 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                 >
                   Inventário
                 </button>
-                <button
-                  onClick={() => {
-                    // Limpar autenticação ao sair da aba Financeiro
-                    sessionStorage.removeItem("financial_auth");
-                    sessionStorage.removeItem("financial_auth_time");
-                    setFinancialAuthenticated(false);
-                    setActiveTab("estoque");
-                  }}
-                  className={cn(
-                    "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
-                    activeTab === "estoque"
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Estoque
-                </button>
+                {/* ABA ESTOQUE OCULTA - NÃO DELETADA */}
+                {/* <button
+                   onClick={() => {
+                     // Limpar autenticação ao sair da aba Financeiro
+                     sessionStorage.removeItem("financial_auth");
+                     sessionStorage.removeItem("financial_auth_time");
+                     setFinancialAuthenticated(false);
+                     setActiveTab("estoque");
+                   }}
+                   className={cn(
+                     "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
+                     activeTab === "estoque"
+                       ? "border-primary text-primary"
+                       : "border-transparent text-muted-foreground hover:text-foreground"
+                   )}
+                 >
+                   Estoque
+                 </button> */}
                 <button
                   onClick={() => {
                     // Limpar autenticação ao sair da aba Financeiro
@@ -1642,11 +1649,12 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                                                                              </span>
                                                                          )}
                                                                      </div>
-                                                                     <div className="grid grid-cols-4 gap-4 text-xs text-muted-foreground mt-2">
+                                                                     <div className="grid grid-cols-5 gap-4 text-xs text-muted-foreground mt-2">
                                                                          <div><span className="font-medium">Cat:</span> {p.category}</div>
                                                                          <div><span className="font-medium">Forn:</span> {p.supplier || "—"}</div>
                                                                          <div className={cn("font-bold", isLow ? "text-destructive" : "text-foreground")}><span className="font-medium">Qtd:</span> {p.quantity}</div>
                                                                          <div><span className="font-medium">Mín:</span> {p.min_quantity}</div>
+                                                                         <div><span className="font-medium">Loja:</span> {p.store || "—"}</div>
                                                                      </div>
                                                                      <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground mt-2">
                                                                          <div><span className="font-medium">Custo:</span> R$ {(p.cost_price || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
@@ -1671,23 +1679,47 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                                                                      </span>
                                                                  )}
                                                                  <div className="flex gap-2">
-                                                                     <Button
-                                                                         size="sm"
-                                                                         variant="outline"
-                                                                         className="border-primary/30 text-primary hover:bg-primary/10"
-                                                                         onClick={() => handleEditProduct(p)}
-                                                                     >
-                                                                         <Edit2 className="w-3 h-3 mr-1" />
-                                                                         Editar
-                                                                     </Button>
-                                                                     <Button
-                                                                         size="sm"
-                                                                         variant="destructive"
-                                                                         onClick={() => openProductDeleteConfirm(p)}
-                                                                     >
-                                                                         <Trash2 className="w-3 h-3" />
-                                                                     </Button>
-                                                                 </div>
+                                                                         <Button
+                                                                             size="sm"
+                                                                             variant="outline"
+                                                                             className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                                                                             onClick={() => {
+                                                                                 setProductForRearrange(p);
+                                                                                 setRearrangeModalOpen(true);
+                                                                             }}
+                                                                         >
+                                                                             <Shuffle className="w-3 h-3 mr-1" />
+                                                                             Remanejar
+                                                                         </Button>
+                                                                         <Button
+                                                                             size="sm"
+                                                                             variant="outline"
+                                                                             className="border-blue-500/30 text-blue-600 hover:bg-blue-500/10"
+                                                                             onClick={() => {
+                                                                                 setProductForDocuments(p);
+                                                                                 setDocumentsModalOpen(true);
+                                                                             }}
+                                                                         >
+                                                                             <FileText className="w-3 h-3 mr-1" />
+                                                                             Docs
+                                                                         </Button>
+                                                                         <Button
+                                                                             size="sm"
+                                                                             variant="outline"
+                                                                             className="border-primary/30 text-primary hover:bg-primary/10"
+                                                                             onClick={() => handleEditProduct(p)}
+                                                                         >
+                                                                             <Edit2 className="w-3 h-3 mr-1" />
+                                                                             Editar
+                                                                         </Button>
+                                                                         <Button
+                                                                             size="sm"
+                                                                             variant="destructive"
+                                                                             onClick={() => openProductDeleteConfirm(p)}
+                                                                         >
+                                                                             <Trash2 className="w-3 h-3" />
+                                                                         </Button>
+                                                                     </div>
                                                              </div>
                                                          </div>
                                                      </td>
@@ -1751,6 +1783,34 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                             )}
                         </DialogContent>
                     </Dialog>
+
+                    {/* Modal de Documentos do Produto */}
+                    <Dialog open={documentsModalOpen} onOpenChange={setDocumentsModalOpen}>
+                        <DialogContent className="bg-card border-border max-h-[90vh] overflow-y-auto max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle className="font-display">
+                                    Documentos - {productForDocuments?.name}
+                                </DialogTitle>
+                            </DialogHeader>
+                            {productForDocuments && (
+                                <ProductDocumentsTab 
+                                    productId={productForDocuments.id} 
+                                    productName={productForDocuments.name}
+                                />
+                            )}
+                        </DialogContent>
+                    </Dialog>
+
+                    {/* Modal de Remanejar Produto */}
+                    <RearrangeProductModal
+                        open={rearrangeModalOpen}
+                        onOpenChange={setRearrangeModalOpen}
+                        product={productForRearrange}
+                        stores={stores}
+                        onSuccess={() => {
+                            fetchProducts();
+                        }}
+                    />
 
                     {/* AlertDialog para Confirmação de Exclusão de Produto */}
                     <AlertDialog open={productDeleteConfirmOpen} onOpenChange={setProductDeleteConfirmOpen}>
