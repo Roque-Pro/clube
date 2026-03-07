@@ -26,7 +26,7 @@ interface Product {
      description?: string;
 }
 
-const productCategories = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Vidro lateral", "Insumo", "Ferramenta", "Outro"];
+const productCategories = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Vidro lateral", "Vidro de Porta", "Insumo", "Ferramenta", "Outro"];
 
 const stores = ["Loja 1", "Loja 2", "Loja 3"];
 
