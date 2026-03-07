@@ -77,7 +77,7 @@ const ClientDashboard = () => {
      const [validatingNewVehicle, setValidatingNewVehicle] = useState(false);
      const [validationResult, setValidationResult] = useState<any>(null);
 
-    const replacementItems = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Vidro lateral", "Vidro de Porta", "Insumo", "Ferramenta", "Outro"];
+    const replacementItems = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Janela", "Porta", "Óculos", "Insumo", "Ferramenta", "Outro"];
 
     // All hooks must be called before any conditional logic below
 

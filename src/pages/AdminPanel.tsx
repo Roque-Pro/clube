@@ -843,7 +843,7 @@ const AdminPanel = () => {
         );
     }
 
-    const productCategories = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Vidro lateral", "Vidro de Porta", "Insumo", "Ferramenta", "Outro"];
+    const productCategories = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Janela", "Porta", "Óculos", "Insumo", "Ferramenta", "Outro"];
 const stores = ["Loja 1", "Loja 2", "Loja 3"];
 
     // Cálculos para saúde do estoque e financeiro
