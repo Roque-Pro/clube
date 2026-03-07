@@ -68,7 +68,7 @@ const AdminPanel = () => {
      const [expenses, setExpenses] = useState<any[]>([]);
      const [sales, setSales] = useState<any[]>([]);
      const [search, setSearch] = useState("");
-     const [activeTab, setActiveTab] = useState<"employees" | "inventory" | "patrimonio" | "financial" | "comissoes">("employees");
+     const [activeTab, setActiveTab] = useState<"employees" | "inventory" | "estoque" | "patrimonio" | "financial" | "comissoes">("employees");
      const [activeFinancialTab, setActiveFinancialTab] = useState<"receitas" | "despesas" | "patrimonio" | "estoque" | "vendas">("despesas");
      const [loading, setLoading] = useState(true);
      const { toast } = useToast();
@@ -79,7 +79,7 @@ const AdminPanel = () => {
      const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
      const [empToDelete, setEmpToDelete] = useState<Employee | null>(null);
      const [invDialogOpen, setInvDialogOpen] = useState(false);
-     const [invForm, setInvForm] = useState({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "Loja 1", costPrice: "", code: "", description: "" });
+     const [invForm, setInvForm] = useState({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "", costPrice: "", code: "", description: "" });
      const [editingProduct, setEditingProduct] = useState<Product | null>(null);
      const [productDeleteConfirmOpen, setProductDeleteConfirmOpen] = useState(false);
      const [productToDelete, setProductToDelete] = useState<Product | null>(null);
@@ -521,12 +521,12 @@ const AdminPanel = () => {
                         min_quantity: parseInt(invForm.minQuantity) || 1,
                         price: parseFloat(invForm.price) || 0,
                         supplier: invForm.supplier || "N/A",
-                        store: invForm.store || "Loja 1",
+                        store: invForm.store || null,
                         cost_price: parseFloat(invForm.costPrice) || 0,
                         code: invForm.code || null,
                         description: invForm.description || null,
-                    })
-                    .eq("id", editingProduct.id);
+                        })
+                        .eq("id", editingProduct.id);
 
                 if (error) throw error;
                 logAction("update", "products", editingProduct.id, editingProduct.name, `Atualizado: ${invForm.name} - Código: ${invForm.code || "N/A"}`);
@@ -542,23 +542,23 @@ const AdminPanel = () => {
                         min_quantity: parseInt(invForm.minQuantity) || 1,
                         price: parseFloat(invForm.price) || 0,
                         supplier: invForm.supplier || "N/A",
-                        store: invForm.store || "Loja 1",
+                        store: invForm.store || null,
                         cost_price: parseFloat(invForm.costPrice) || 0,
                         code: invForm.code || null,
                         description: invForm.description || null,
-                    })
-                    .select();
+                        })
+                        .select();
 
                 if (error) throw error;
                 if (data && data[0]) {
                     logAction("create", "products", data[0].id, invForm.name, `Código: ${invForm.code || "N/A"} - Categoria: ${invForm.category} - Loja: ${invForm.store}`);
                 }
                 toast({ title: "Produto cadastrado com sucesso!" });
-            }
-            setInvForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "Loja 1", costPrice: "", code: "", description: "" });
-            setEditingProduct(null);
-            setInvDialogOpen(false);
-            fetchProducts();
+                }
+                setInvForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "", costPrice: "", code: "", description: "" });
+                setEditingProduct(null);
+                setInvDialogOpen(false);
+                fetchProducts();
         } catch (error: any) {
             toast({
                 title: "Erro ao salvar produto",
@@ -579,7 +579,7 @@ const AdminPanel = () => {
             minQuantity: product.min_quantity.toString(),
             price: product.price.toString(),
             supplier: product.supplier || "",
-            store: product.store || "Loja 1",
+            store: product.store || "",
             costPrice: (product.cost_price || 0).toString(),
             code: product.code || "",
             description: product.description || "",
@@ -917,6 +917,23 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                   )}
                 >
                   Inventário
+                </button>
+                <button
+                  onClick={() => {
+                    // Limpar autenticação ao sair da aba Financeiro
+                    sessionStorage.removeItem("financial_auth");
+                    sessionStorage.removeItem("financial_auth_time");
+                    setFinancialAuthenticated(false);
+                    setActiveTab("estoque");
+                  }}
+                  className={cn(
+                    "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
+                    activeTab === "estoque"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Estoque
                 </button>
                 <button
                   onClick={() => {
@@ -1448,7 +1465,7 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                             <Input
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Buscar por nome ou categoria..."
+                                placeholder="Buscar por nome, código, categoria, fornecedor..."
                                 className="pl-10 bg-card border-border"
                             />
                         </div>
@@ -1480,37 +1497,20 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                                               disabled={editingProduct ? false : false}
                                           />
                                       </div>
-                                     <div className="grid grid-cols-2 gap-4">
-                                         <div>
-                                             <Label>Categoria *</Label>
-                                             <Select value={invForm.category} onValueChange={(v) => setInvForm({ ...invForm, category: v })}>
-                                                 <SelectTrigger>
-                                                     <SelectValue placeholder="Selecione..." />
-                                                 </SelectTrigger>
-                                                 <SelectContent>
-                                                     {productCategories.map((c) => (
-                                                         <SelectItem key={c} value={c}>
-                                                             {c}
-                                                         </SelectItem>
-                                                     ))}
-                                                 </SelectContent>
-                                             </Select>
-                                         </div>
-                                         <div>
-                                             <Label>Loja *</Label>
-                                             <Select value={invForm.store} onValueChange={(v) => setInvForm({ ...invForm, store: v })}>
-                                                 <SelectTrigger>
-                                                     <SelectValue placeholder="Selecione..." />
-                                                 </SelectTrigger>
-                                                 <SelectContent>
-                                                     {stores.map((s) => (
-                                                         <SelectItem key={s} value={s}>
-                                                             {s}
-                                                         </SelectItem>
-                                                     ))}
-                                                 </SelectContent>
-                                             </Select>
-                                         </div>
+                                     <div>
+                                         <Label>Categoria *</Label>
+                                         <Select value={invForm.category} onValueChange={(v) => setInvForm({ ...invForm, category: v })}>
+                                             <SelectTrigger>
+                                                 <SelectValue placeholder="Selecione..." />
+                                             </SelectTrigger>
+                                             <SelectContent>
+                                                 {productCategories.map((c) => (
+                                                     <SelectItem key={c} value={c}>
+                                                         {c}
+                                                     </SelectItem>
+                                                 ))}
+                                             </SelectContent>
+                                         </Select>
                                      </div>
                                      <div>
                                          <Label>Fornecedor</Label>
@@ -1580,7 +1580,7 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                                              <Button
                                                  onClick={() => {
                                                      setEditingProduct(null);
-                                                     setInvForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "Loja 1", costPrice: "", code: "", description: "" });
+                                                     setInvForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "", costPrice: "", code: "", description: "" });
                                                      setInvDialogOpen(false);
                                                  }}
                                                  variant="outline"
@@ -1611,7 +1611,9 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                                                  p.name.toLowerCase().includes(search.toLowerCase()) ||
                                                  p.category.toLowerCase().includes(search.toLowerCase()) ||
                                                  (p.code && p.code.toLowerCase().includes(search.toLowerCase())) ||
-                                                 (p.description && p.description.toLowerCase().includes(search.toLowerCase()))
+                                                 (p.supplier && p.supplier.toLowerCase().includes(search.toLowerCase())) ||
+                                                 (p.description && p.description.toLowerCase().includes(search.toLowerCase())) ||
+                                                 (p.store && p.store.toLowerCase().includes(search.toLowerCase()))
                                          )
                                         .map((p, i) => {
                                           const isLow = p.quantity <= (p.min_quantity || 1);
@@ -1640,9 +1642,8 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                                                                              </span>
                                                                          )}
                                                                      </div>
-                                                                     <div className="grid grid-cols-5 gap-4 text-xs text-muted-foreground mt-2">
+                                                                     <div className="grid grid-cols-4 gap-4 text-xs text-muted-foreground mt-2">
                                                                          <div><span className="font-medium">Cat:</span> {p.category}</div>
-                                                                         <div><span className="font-medium">Loja:</span> {p.store || "Loja 1"}</div>
                                                                          <div><span className="font-medium">Forn:</span> {p.supplier || "—"}</div>
                                                                          <div className={cn("font-bold", isLow ? "text-destructive" : "text-foreground")}><span className="font-medium">Qtd:</span> {p.quantity}</div>
                                                                          <div><span className="font-medium">Mín:</span> {p.min_quantity}</div>
@@ -1773,6 +1774,222 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                     </AlertDialog>
                      </div>
                      )}
+
+                     {/* SEÇÃO ESTOQUE */}
+                     {activeTab === "estoque" && (
+                      <div>
+                          {/* Cards de Resumo */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                              {/* Total de Produtos */}
+                              <motion.div
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="glass-card p-6 rounded-lg border border-border"
+                              >
+                                  <div className="flex items-center justify-between">
+                                      <div>
+                                          <p className="text-sm text-muted-foreground mb-1">Total de Produtos</p>
+                                          <p className="text-3xl font-bold text-foreground">{totalProducts}</p>
+                                      </div>
+                                      <div className="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center">
+                                          <Barcode className="w-6 h-6 text-primary" />
+                                      </div>
+                                  </div>
+                              </motion.div>
+
+                              {/* Produtos com Baixo Estoque */}
+                              <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                className="glass-card p-6 rounded-lg border border-border"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm text-muted-foreground mb-1">Baixo Estoque</p>
+                                    <p className={cn("text-3xl font-bold", lowStockProducts.length > 0 ? "text-destructive" : "text-foreground")}>
+                                      {lowStockProducts.length}
+                                    </p>
+                                    {lowStockProducts.length > 0 && (
+                                      <div className="mt-2 space-y-1">
+                                        {lowStockProducts.slice(0, 2).map(p => (
+                                          <p key={p.id} className="text-xs text-destructive">• {p.name}</p>
+                                        ))}
+                                        {lowStockProducts.length > 2 && (
+                                          <p className="text-xs text-muted-foreground">+{lowStockProducts.length - 2} mais</p>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", lowStockProducts.length > 0 ? "bg-destructive/15" : "bg-success/15")}>
+                                    <AlertTriangle className={cn("w-6 h-6", lowStockProducts.length > 0 ? "text-destructive" : "text-success")} />
+                                  </div>
+                                </div>
+                              </motion.div>
+                              </div>
+
+                              {/* Cards Adicionais de Análise */}
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                              {/* Produto Mais Estocado */}
+                              {mostStockedProduct && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.4 }}
+                                  className="glass-card p-4 rounded-lg border border-border"
+                                >
+                                  <p className="text-xs text-muted-foreground mb-2">Maior Quantidade</p>
+                                  <p className="font-semibold text-foreground truncate text-sm">{mostStockedProduct.name}</p>
+                                  <p className="text-lg font-bold text-primary mt-1">{mostStockedProduct.quantity} unid.</p>
+                                  <p className="text-xs text-muted-foreground mt-1">{mostStockedProduct.category}</p>
+                                </motion.div>
+                              )}
+
+                              {/* Produto Menos Estocado */}
+                              {leastStockedProduct && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.5 }}
+                                  className={cn("glass-card p-4 rounded-lg border", leastStockedProduct.quantity <= (leastStockedProduct.min_quantity || 1) ? "border-destructive/50 bg-destructive/5" : "border-border")}
+                                >
+                                  <p className="text-xs text-muted-foreground mb-2">Menor Quantidade</p>
+                                  <p className={cn("font-semibold truncate text-sm", leastStockedProduct.quantity <= (leastStockedProduct.min_quantity || 1) ? "text-destructive" : "text-foreground")}>
+                                    {leastStockedProduct.name}
+                                  </p>
+                                  <p className={cn("text-lg font-bold mt-1", leastStockedProduct.quantity <= (leastStockedProduct.min_quantity || 1) ? "text-destructive" : "text-primary")}>
+                                    {leastStockedProduct.quantity} unid.
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">Mín: {leastStockedProduct.min_quantity || 1}</p>
+                                </motion.div>
+                              )}
+
+                              {/* Produtos Mais Valiosos */}
+                              <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.6 }}
+                                className="glass-card p-4 rounded-lg border border-border"
+                              >
+                                <p className="text-xs text-muted-foreground mb-2">Top 3 Valiosos</p>
+                                <div className="space-y-2">
+                                  {mostValuableProducts.map((p, idx) => (
+                                    <div key={p.id} className="flex items-center justify-between">
+                                      <p className="text-xs text-muted-foreground flex-1 truncate">{idx + 1}. {p.name}</p>
+                                      <p className="text-xs font-bold text-primary whitespace-nowrap ml-2">R$ {p.totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </motion.div>
+                              </div>
+
+                          {/* Barra de Busca */}
+                          <div className="mb-6 flex gap-4 justify-between items-center">
+                              <div className="relative max-w-md flex-1">
+                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                  <Input
+                                      value={search}
+                                      onChange={(e) => setSearch(e.target.value)}
+                                      placeholder="Buscar por nome, código, categoria, fornecedor..."
+                                      className="pl-10 bg-card border-border"
+                                  />
+                              </div>
+                          </div>
+
+                          {/* Tabela de Produtos */}
+                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card overflow-x-auto">
+                              <table className="w-full">
+                                  <thead>
+                                      <tr className="border-b border-border">
+                                          <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produto</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody>
+                                      <AnimatePresence>
+                                          {products
+                                               .filter(
+                                                   (p) =>
+                                                       p.name.toLowerCase().includes(search.toLowerCase()) ||
+                                                       p.category.toLowerCase().includes(search.toLowerCase()) ||
+                                                       (p.code && p.code.toLowerCase().includes(search.toLowerCase())) ||
+                                                       (p.supplier && p.supplier.toLowerCase().includes(search.toLowerCase())) ||
+                                                       (p.description && p.description.toLowerCase().includes(search.toLowerCase())) ||
+                                                       (p.store && p.store.toLowerCase().includes(search.toLowerCase()))
+                                               )
+                                              .map((p, i) => {
+                                                const isLow = p.quantity <= (p.min_quantity || 1);
+                                                const totalValue = p.quantity * p.price;
+                                                  return (
+                                                      <motion.tr
+                                                           key={p.id}
+                                                           initial={{ opacity: 0 }}
+                                                           animate={{ opacity: 1 }}
+                                                           transition={{ delay: i * 0.03 }}
+                                                           className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
+                                                       >
+                                                           <td className="p-4" colSpan={10}>
+                                                               <div className="flex items-start justify-between gap-3 w-full">
+                                                                   <div className="flex items-start gap-3 flex-1">
+                                                                       <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5", isLow ? "bg-destructive/15" : "bg-primary/15")}>
+                                                                           <Package className={cn("w-4 h-4", isLow ? "text-destructive" : "text-primary")} />
+                                                                       </div>
+                                                                       <div className="flex-1 min-w-0">
+                                                                           <div className="flex items-center gap-2">
+                                                                               <span className="font-medium text-foreground text-sm">{p.name}</span>
+                                                                               {p.code && (
+                                                                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+                                                                                       <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                                                                       {p.code}
+                                                                                   </span>
+                                                                               )}
+                                                                           </div>
+                                                                           <div className="grid grid-cols-5 gap-4 text-xs text-muted-foreground mt-2">
+                                                                               <div><span className="font-medium">Cat:</span> {p.category}</div>
+                                                                               <div><span className="font-medium">Loja:</span> {p.store || "Loja 1"}</div>
+                                                                               <div><span className="font-medium">Forn:</span> {p.supplier || "—"}</div>
+                                                                               <div className={cn("font-bold", isLow ? "text-destructive" : "text-foreground")}><span className="font-medium">Qtd:</span> {p.quantity}</div>
+                                                                               <div><span className="font-medium">Mín:</span> {p.min_quantity}</div>
+                                                                           </div>
+                                                                           <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground mt-2">
+                                                                               <div><span className="font-medium">Custo:</span> R$ {(p.cost_price || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                                                                               <div><span className="font-medium">Venda:</span> R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                                                                           </div>
+                                                                           {p.description && (
+                                                                               <div className="mt-2 flex items-start gap-2">
+                                                                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-600 border border-blue-500/30 flex-shrink-0">
+                                                                                       <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                                                                       Descrição
+                                                                                   </span>
+                                                                                   <p className="text-xs text-muted-foreground italic">{p.description}</p>
+                                                                               </div>
+                                                                           )}
+                                                                           {isLow && <p className="text-xs text-destructive mt-2 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Estoque baixo!</p>}
+                                                                       </div>
+                                                                   </div>
+                                                                   <div className="flex items-center gap-2 flex-shrink-0">
+                                                                       {!isLow && (
+                                                                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-success/15 text-success whitespace-nowrap">
+                                                                               OK
+                                                                           </span>
+                                                                       )}
+                                                                   </div>
+                                                               </div>
+                                                           </td>
+                                                       </motion.tr>
+                                                  );
+                                              })}
+                                      </AnimatePresence>
+                                  </tbody>
+                              </table>
+                          </motion.div>
+
+                          {products.length === 0 && (
+                               <div className="text-center py-12 text-muted-foreground">
+                                   Nenhum produto no estoque
+                               </div>
+                           )}
+                      </div>
+                      )}
 
                     {/* SEÇÃO PATRIMÔNIO */}
                     {activeTab === "patrimonio" && (
@@ -2359,61 +2576,227 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
 
               {/* TAB: ESTOQUE */}
               {activeFinancialTab === "estoque" && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Análise de Estoque</h3>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Valor Total</p>
-                      <p className="text-xl font-bold text-orange-500">R$ {totalInventoryValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-                    </div>
-                  </div>
+                 <div>
+                     {/* Cards de Resumo */}
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                         {/* Total de Produtos */}
+                         <motion.div
+                             initial={{ opacity: 0, y: 20 }}
+                             animate={{ opacity: 1, y: 0 }}
+                             className="glass-card p-6 rounded-lg border border-border"
+                         >
+                             <div className="flex items-center justify-between">
+                                 <div>
+                                     <p className="text-sm text-muted-foreground mb-1">Total de Produtos</p>
+                                     <p className="text-3xl font-bold text-foreground">{totalProducts}</p>
+                                 </div>
+                                 <div className="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center">
+                                     <Barcode className="w-6 h-6 text-primary" />
+                                 </div>
+                             </div>
+                         </motion.div>
 
-                  {products.length === 0 ? (
-                    <div className="bg-secondary/20 p-8 rounded-lg text-center text-muted-foreground text-sm">
-                      Nenhum produto no estoque
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border">
-                            <th className="text-left p-3 text-xs font-semibold text-muted-foreground">Produto</th>
-                            <th className="text-left p-3 text-xs font-semibold text-muted-foreground">Categoria</th>
-                            <th className="text-center p-3 text-xs font-semibold text-muted-foreground">Qtd</th>
-                            <th className="text-right p-3 text-xs font-semibold text-muted-foreground">Valor Unit.</th>
-                            <th className="text-right p-3 text-xs font-semibold text-muted-foreground">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {products.map((prod) => {
-                            const totalProd = (prod.quantity || 0) * (prod.price || 0);
-                            return (
-                              <motion.tr
-                                key={prod.id}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="border-b border-border/50 hover:bg-secondary/20 transition-colors"
-                              >
-                                <td className="p-3 text-foreground font-medium">{prod.name}</td>
-                                <td className="p-3 text-foreground">{prod.category}</td>
-                                <td className="p-3 text-center">{prod.quantity}</td>
-                                <td className="p-3 text-right text-muted-foreground">R$ {prod.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-                                <td className="p-3 text-right font-bold text-orange-500">R$ {totalProd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-                              </motion.tr>
-                            );
-                          })}
-                          <tr className="border-t-2 border-primary/30 bg-primary/5">
-                            <td colSpan={4} className="p-3 text-right font-semibold">TOTAL ESTOQUE:</td>
-                            <td className="p-3 text-right font-bold text-orange-500 text-lg">
-                              R$ {totalInventoryValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  </div>
-                  )}
+                         {/* Produtos com Baixo Estoque */}
+                         <motion.div
+                           initial={{ opacity: 0, y: 20 }}
+                           animate={{ opacity: 1, y: 0 }}
+                           transition={{ delay: 0.1 }}
+                           className="glass-card p-6 rounded-lg border border-border"
+                         >
+                           <div className="flex items-center justify-between">
+                             <div>
+                               <p className="text-sm text-muted-foreground mb-1">Baixo Estoque</p>
+                               <p className={cn("text-3xl font-bold", lowStockProducts.length > 0 ? "text-destructive" : "text-foreground")}>
+                                 {lowStockProducts.length}
+                               </p>
+                               {lowStockProducts.length > 0 && (
+                                 <div className="mt-2 space-y-1">
+                                   {lowStockProducts.slice(0, 2).map(p => (
+                                     <p key={p.id} className="text-xs text-destructive">• {p.name}</p>
+                                   ))}
+                                   {lowStockProducts.length > 2 && (
+                                     <p className="text-xs text-muted-foreground">+{lowStockProducts.length - 2} mais</p>
+                                   )}
+                                 </div>
+                               )}
+                             </div>
+                             <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", lowStockProducts.length > 0 ? "bg-destructive/15" : "bg-success/15")}>
+                               <AlertTriangle className={cn("w-6 h-6", lowStockProducts.length > 0 ? "text-destructive" : "text-success")} />
+                             </div>
+                           </div>
+                         </motion.div>
+                         </div>
+
+                         {/* Cards Adicionais de Análise */}
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                         {/* Produto Mais Estocado */}
+                         {mostStockedProduct && (
+                           <motion.div
+                             initial={{ opacity: 0, y: 20 }}
+                             animate={{ opacity: 1, y: 0 }}
+                             transition={{ delay: 0.4 }}
+                             className="glass-card p-4 rounded-lg border border-border"
+                           >
+                             <p className="text-xs text-muted-foreground mb-2">Maior Quantidade</p>
+                             <p className="font-semibold text-foreground truncate text-sm">{mostStockedProduct.name}</p>
+                             <p className="text-lg font-bold text-primary mt-1">{mostStockedProduct.quantity} unid.</p>
+                             <p className="text-xs text-muted-foreground mt-1">{mostStockedProduct.category}</p>
+                           </motion.div>
+                         )}
+
+                         {/* Produto Menos Estocado */}
+                         {leastStockedProduct && (
+                           <motion.div
+                             initial={{ opacity: 0, y: 20 }}
+                             animate={{ opacity: 1, y: 0 }}
+                             transition={{ delay: 0.5 }}
+                             className={cn("glass-card p-4 rounded-lg border", leastStockedProduct.quantity <= (leastStockedProduct.min_quantity || 1) ? "border-destructive/50 bg-destructive/5" : "border-border")}
+                           >
+                             <p className="text-xs text-muted-foreground mb-2">Menor Quantidade</p>
+                             <p className={cn("font-semibold truncate text-sm", leastStockedProduct.quantity <= (leastStockedProduct.min_quantity || 1) ? "text-destructive" : "text-foreground")}>
+                               {leastStockedProduct.name}
+                             </p>
+                             <p className={cn("text-lg font-bold mt-1", leastStockedProduct.quantity <= (leastStockedProduct.min_quantity || 1) ? "text-destructive" : "text-primary")}>
+                               {leastStockedProduct.quantity} unid.
+                             </p>
+                             <p className="text-xs text-muted-foreground mt-1">Mín: {leastStockedProduct.min_quantity || 1}</p>
+                           </motion.div>
+                         )}
+
+                         {/* Produtos Mais Valiosos */}
+                         <motion.div
+                           initial={{ opacity: 0, y: 20 }}
+                           animate={{ opacity: 1, y: 0 }}
+                           transition={{ delay: 0.6 }}
+                           className="glass-card p-4 rounded-lg border border-border"
+                         >
+                           <p className="text-xs text-muted-foreground mb-2">Top 3 Valiosos</p>
+                           <div className="space-y-2">
+                             {mostValuableProducts.map((p, idx) => (
+                               <div key={p.id} className="flex items-center justify-between">
+                                 <p className="text-xs text-muted-foreground flex-1 truncate">{idx + 1}. {p.name}</p>
+                                 <p className="text-xs font-bold text-primary whitespace-nowrap ml-2">R$ {p.totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                               </div>
+                             ))}
+                           </div>
+                         </motion.div>
+                         </div>
+
+                     {/* Barra de Busca */}
+                     <div className="mb-6 flex gap-4 justify-between items-center">
+                         <div className="relative max-w-md flex-1">
+                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                             <Input
+                                 value={search}
+                                 onChange={(e) => setSearch(e.target.value)}
+                                 placeholder="Buscar por nome, código, categoria, fornecedor..."
+                                 className="pl-10 bg-card border-border"
+                             />
+                         </div>
+                     </div>
+
+                     {/* Tabela de Produtos */}
+                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card overflow-x-auto">
+                         <table className="w-full">
+                             <thead>
+                                 <tr className="border-b border-border">
+                                     <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produto</th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                                 <AnimatePresence>
+                                     {products
+                                          .filter(
+                                              (p) =>
+                                                  p.name.toLowerCase().includes(search.toLowerCase()) ||
+                                                  p.category.toLowerCase().includes(search.toLowerCase()) ||
+                                                  (p.code && p.code.toLowerCase().includes(search.toLowerCase())) ||
+                                                  (p.supplier && p.supplier.toLowerCase().includes(search.toLowerCase())) ||
+                                                  (p.description && p.description.toLowerCase().includes(search.toLowerCase())) ||
+                                                  (p.store && p.store.toLowerCase().includes(search.toLowerCase()))
+                                          )
+                                         .map((p, i) => {
+                                           const isLow = p.quantity <= (p.min_quantity || 1);
+                                           const totalValue = p.quantity * p.price;
+                                             return (
+                                                 <motion.tr
+                                                      key={p.id}
+                                                      initial={{ opacity: 0 }}
+                                                      animate={{ opacity: 1 }}
+                                                      transition={{ delay: i * 0.03 }}
+                                                      className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
+                                                  >
+                                                      <td className="p-4" colSpan={10}>
+                                                          <div className="flex items-start justify-between gap-3 w-full">
+                                                              <div className="flex items-start gap-3 flex-1">
+                                                                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5", isLow ? "bg-destructive/15" : "bg-primary/15")}>
+                                                                      <Package className={cn("w-4 h-4", isLow ? "text-destructive" : "text-primary")} />
+                                                                  </div>
+                                                                  <div className="flex-1 min-w-0">
+                                                                      <div className="flex items-center gap-2">
+                                                                          <span className="font-medium text-foreground text-sm">{p.name}</span>
+                                                                          {p.code && (
+                                                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+                                                                                  <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                                                                  {p.code}
+                                                                              </span>
+                                                                          )}
+                                                                      </div>
+                                                                      <div className="grid grid-cols-5 gap-4 text-xs text-muted-foreground mt-2">
+                                                                          <div><span className="font-medium">Cat:</span> {p.category}</div>
+                                                                          <div><span className="font-medium">Loja:</span> {p.store || "Loja 1"}</div>
+                                                                          <div><span className="font-medium">Forn:</span> {p.supplier || "—"}</div>
+                                                                          <div className={cn("font-bold", isLow ? "text-destructive" : "text-foreground")}><span className="font-medium">Qtd:</span> {p.quantity}</div>
+                                                                          <div><span className="font-medium">Mín:</span> {p.min_quantity}</div>
+                                                                      </div>
+                                                                      <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground mt-2">
+                                                                          <div><span className="font-medium">Custo:</span> R$ {(p.cost_price || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                                                                          <div><span className="font-medium">Venda:</span> R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+                                                                      </div>
+                                                                      {p.description && (
+                                                                          <div className="mt-2 flex items-start gap-2">
+                                                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-600 border border-blue-500/30 flex-shrink-0">
+                                                                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                                                                  Descrição
+                                                                              </span>
+                                                                              <p className="text-xs text-muted-foreground italic">{p.description}</p>
+                                                                          </div>
+                                                                      )}
+                                                                      {isLow && <p className="text-xs text-destructive mt-2 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Estoque baixo!</p>}
+                                                                  </div>
+                                                              </div>
+                                                              <div className="flex items-center gap-2 flex-shrink-0">
+                                                                  {!isLow && (
+                                                                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-success/15 text-success whitespace-nowrap">
+                                                                          OK
+                                                                      </span>
+                                                                  )}
+                                                              </div>
+                                                          </div>
+                                                      </td>
+                                                  </motion.tr>
+                                             );
+                                         })}
+                                 </AnimatePresence>
+                             </tbody>
+                         </table>
+                     </motion.div>
+
+                     {products.filter(
+                       (p) =>
+                         p.name.toLowerCase().includes(search.toLowerCase()) ||
+                         p.category.toLowerCase().includes(search.toLowerCase()) ||
+                         (p.code && p.code.toLowerCase().includes(search.toLowerCase())) ||
+                         (p.supplier && p.supplier.toLowerCase().includes(search.toLowerCase())) ||
+                         (p.description && p.description.toLowerCase().includes(search.toLowerCase())) ||
+                         (p.store && p.store.toLowerCase().includes(search.toLowerCase()))
+                     ).length === 0 && (
+                       <div className="text-center py-12 text-muted-foreground">
+                         Nenhum produto encontrado
+                       </div>
+                     )}
+                 </div>
+                 )}
 
                   {/* TAB: VENDAS */}
                   {activeFinancialTab === "vendas" && (

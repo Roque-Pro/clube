@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { ShoppingCart, Plus, TrendingUp, AlertCircle, Eye, EyeOff, Download, X, Trash2, FileText, Loader } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ShoppingCart, Plus, TrendingUp, AlertCircle, Eye, EyeOff, Download, X, Trash2, FileText, Loader, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,7 @@ const SalesNew = () => {
     const [loading, setLoading] = useState(true);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [storeName, setStoreName] = useState("IGUAÇU AUTO VIDROS SOM E ACESSÓRIOS");
     const { toast } = useToast();
 
     // Form state
@@ -68,7 +69,12 @@ const SalesNew = () => {
     });
     const [currentEmployeeId, setCurrentEmployeeId] = useState("");
     const [notes, setNotes] = useState("");
-    const [paymentMethod, setPaymentMethod] = useState("dinheiro");
+    const [paymentMethods, setPaymentMethods] = useState<Array<{ method: string; amount: number }>>([
+        { method: "dinheiro", amount: 0 }
+    ]);
+    const [productSearch, setProductSearch] = useState("");
+    const [showProductDropdown, setShowProductDropdown] = useState(false);
+    const productSearchRef = useRef<HTMLDivElement>(null);
 
     const [totalSales, setTotalSales] = useState(0);
     const [showValues, setShowValues] = useState(true);
@@ -78,24 +84,45 @@ const SalesNew = () => {
     const [receiptFileName, setReceiptFileName] = useState("");
     const [generatingReceiptForSaleId, setGeneratingReceiptForSaleId] = useState<string | null>(null);
 
-    // Fetch products
-    const fetchProducts = async () => {
+    // Fetch store name from user profile
+    const fetchStoreNameFromUser = async () => {
         try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
             const { data, error } = await supabase
-                .from("products")
-                .select("*")
-                .order("name");
+                .from("profiles")
+                .select("store_name")
+                .eq("user_id", user.id)
+                .single();
 
             if (error) throw error;
-            setProducts(data || []);
+            if (data?.store_name) {
+                setStoreName(data.store_name);
+            }
         } catch (err: any) {
-            toast({
-                title: "Erro ao carregar produtos",
-                description: err.message,
-                variant: "destructive",
-            });
+            console.error("Erro ao buscar store_name:", err);
         }
     };
+
+    // Fetch products
+     const fetchProducts = async () => {
+         try {
+             const { data, error } = await supabase
+                 .from("products")
+                 .select("*")
+                 .order("name");
+
+             if (error) throw error;
+             setProducts(data || []);
+         } catch (err: any) {
+             toast({
+                 title: "Erro ao carregar produtos",
+                 description: err.message,
+                 variant: "destructive",
+             });
+         }
+     };
 
     // Fetch employees
     const fetchEmployees = async () => {
@@ -139,9 +166,22 @@ const SalesNew = () => {
     };
 
     useEffect(() => {
+        fetchStoreNameFromUser();
         fetchProducts();
         fetchEmployees();
         fetchSales();
+    }, []);
+
+    // Fechar dropdown quando clicar fora
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (productSearchRef.current && !productSearchRef.current.contains(event.target as Node)) {
+                setShowProductDropdown(false);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     // Add employee to current item
@@ -261,7 +301,7 @@ const SalesNew = () => {
 
             const blob = await generateReceipt({
                 saleId: saleId,
-                storeName: "IGUAÇU AUTO VIDROS SOM E ACESSÓRIOS",
+                storeName: storeName,
                 storeContact: "(21) 2697-0825",
                 storeAddress: "Av Marques Rollo, 1123 - Nova Iguaçu - RJ",
                 storeEmail: "iguassuautocentral@gmail.com",
@@ -297,6 +337,11 @@ const SalesNew = () => {
         }, 0);
     };
 
+    // Calculate payment methods total
+    const calculatePaymentMethodsTotal = () => {
+        return paymentMethods.reduce((sum, pm) => sum + pm.amount, 0);
+    };
+
     // Submit sale
     const handleSubmitSale = async () => {
         if (saleItems.length === 0) {
@@ -310,21 +355,25 @@ const SalesNew = () => {
             const saleDateTime = new Date();
 
             // Insert main sale record
-            const { data: saleData, error: saleError } = await supabase
-                .from("sales")
-                .insert({
-                    description: `Venda com ${saleItems.length} produto(s)`,
-                    amount: totalAmount,
-                    sale_type: "pontual",
-                    sale_date: saleDateTime.toISOString(),
-                    notes: notes || "",
-                    payment_method: paymentMethod,
-                    quantity: saleItems.reduce((sum, item) => sum + item.quantity, 0),
-                    unit_price: totalAmount / saleItems.reduce((sum, item) => sum + item.quantity, 0),
-                    employee_id: saleItems[0].employees?.[0]?.employee_id || null, // Store first employee as primary
-                    employee_name: saleItems[0].employees?.[0]?.employee_name || "",
-                })
-                .select();
+             const paymentMethodsStr = paymentMethods
+                 .map((pm) => `${pm.method}:${pm.amount.toFixed(2)}`)
+                 .join("|");
+
+             const { data: saleData, error: saleError } = await supabase
+                 .from("sales")
+                 .insert({
+                     description: `Venda com ${saleItems.length} produto(s)`,
+                     amount: totalAmount,
+                     sale_type: "pontual",
+                     sale_date: saleDateTime.toISOString(),
+                     notes: notes || "",
+                     payment_method: paymentMethodsStr,
+                     quantity: saleItems.reduce((sum, item) => sum + item.quantity, 0),
+                     unit_price: totalAmount / saleItems.reduce((sum, item) => sum + item.quantity, 0),
+                     employee_id: saleItems[0].employees?.[0]?.employee_id || null, // Store first employee as primary
+                     employee_name: saleItems[0].employees?.[0]?.employee_name || "",
+                 })
+                 .select();
 
             if (saleError) throw saleError;
             if (!saleData || saleData.length === 0) throw new Error("Falha ao criar venda");
@@ -415,19 +464,23 @@ const SalesNew = () => {
                     // Verificar se algum produto é vidro
                     const hasGlassProduct = receiptProducts.some((p) => p.isGlass);
 
-                    const blob = await generateReceipt({
-                        saleId: sale.id,
-                        storeName: "IGUAÇU AUTO VIDROS SOM E ACESSÓRIOS",
-                        storeContact: "(21) 2697-0825",
-                        storeAddress: "Av Marques Rollo, 1123 - Nova Iguaçu - RJ",
-                        storeEmail: "iguassuautocentral@gmail.com",
-                        products: receiptProducts,
-                        totalAmount: totalAmount,
-                        paymentMethod: paymentMethod,
-                        saleDate: sale.sale_date,
-                        notes: notes,
-                        isGlassWarranty: hasGlassProduct,
-                    });
+                    const paymentMethodDisplay = paymentMethods
+                         .map((pm) => `${pm.method}: R$${pm.amount.toFixed(2)}`)
+                         .join(" | ");
+
+                     const blob = await generateReceipt({
+                         saleId: sale.id,
+                         storeName: storeName,
+                         storeContact: "(21) 2697-0825",
+                         storeAddress: "Av Marques Rollo, 1123 - Nova Iguaçu - RJ",
+                         storeEmail: "iguassuautocentral@gmail.com",
+                         products: receiptProducts,
+                         totalAmount: totalAmount,
+                         paymentMethod: paymentMethodDisplay,
+                         saleDate: sale.sale_date,
+                         notes: notes,
+                         isGlassWarranty: hasGlassProduct,
+                     });
                     setReceiptBlob(blob);
                     setReceiptFileName(
                         `recibo_${sale.id}_${new Date().toISOString().split("T")[0]}.pdf`
@@ -444,11 +497,12 @@ const SalesNew = () => {
             }
 
             // Reset form
-            setSaleItems([]);
-            setCurrentItem({ product_id: "", employee_id: "", quantity: 1 });
-            setNotes("");
-            setPaymentMethod("dinheiro");
-            setDialogOpen(false);
+             setSaleItems([]);
+             setCurrentItem({ product_id: "", employees: [], quantity: 1 });
+             setNotes("");
+             setPaymentMethods([{ method: "dinheiro", amount: 0 }]);
+             setProductSearch("");
+             setDialogOpen(false);
 
             fetchProducts();
             fetchSales();
@@ -484,7 +538,10 @@ const SalesNew = () => {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* New Sale Button */}
                 <div className="mb-6 md:mb-8">
-                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <Dialog open={dialogOpen} onOpenChange={(open) => {
+                        setDialogOpen(open);
+                        if (!open) setProductSearch("");
+                    }}>
                         <DialogTrigger asChild>
                             <Button className="gap-2 w-full md:w-auto">
                                 <Plus className="w-4 h-4" />
@@ -504,24 +561,84 @@ const SalesNew = () => {
 
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <Label htmlFor="product">Produto *</Label>
-                                                <Select
-                                                    value={currentItem.product_id || ""}
-                                                    onValueChange={(value) => setCurrentItem({ ...currentItem, product_id: value })}
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Selecione um produto" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {products.map((product) => (
-                                                            <SelectItem key={product.id} value={product.id}>
-                                                                {product.name} (Est: {product.quantity})
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
+                                             <div>
+                                                 <Label htmlFor="product">Produto *</Label>
+                                                 <div ref={productSearchRef} className="relative">
+                                                     <div className="relative">
+                                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                                                         <Input
+                                                             id="product-search"
+                                                             type="text"
+                                                             placeholder="Digite o nome do produto..."
+                                                             value={productSearch}
+                                                             onChange={(e) => {
+                                                                 setProductSearch(e.target.value);
+                                                                 setShowProductDropdown(true);
+                                                             }}
+                                                             onFocus={() => setShowProductDropdown(true)}
+                                                             className="pl-10 pr-10"
+                                                         />
+                                                         {productSearch && (
+                                                             <button
+                                                                 type="button"
+                                                                 onClick={() => {
+                                                                     setProductSearch("");
+                                                                     setShowProductDropdown(false);
+                                                                 }}
+                                                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                                             >
+                                                                 <X className="w-4 h-4" />
+                                                             </button>
+                                                         )}
+                                                     </div>
+                                                     
+                                                     {showProductDropdown && (
+                                                         <motion.div
+                                                             initial={{ opacity: 0, y: -10 }}
+                                                             animate={{ opacity: 1, y: 0 }}
+                                                             exit={{ opacity: 0, y: -10 }}
+                                                             className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto"
+                                                         >
+                                                             {products
+                                                                 .filter((product) =>
+                                                                     product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+                                                                     product.category.toLowerCase().includes(productSearch.toLowerCase())
+                                                                 )
+                                                                 .length === 0 ? (
+                                                                 <div className="p-4 text-center text-muted-foreground text-sm">
+                                                                     Nenhum produto encontrado
+                                                                 </div>
+                                                             ) : (
+                                                                 products
+                                                                     .filter((product) =>
+                                                                         product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+                                                                         product.category.toLowerCase().includes(productSearch.toLowerCase())
+                                                                     )
+                                                                     .map((product) => (
+                                                                         <button
+                                                                             key={product.id}
+                                                                             type="button"
+                                                                             onClick={() => {
+                                                                                 setCurrentItem({ ...currentItem, product_id: product.id });
+                                                                                 setProductSearch(product.name);
+                                                                                 setShowProductDropdown(false);
+                                                                             }}
+                                                                             className="w-full text-left px-4 py-2 hover:bg-muted/50 border-b border-border/50 last:border-0 transition-colors flex justify-between items-center"
+                                                                         >
+                                                                             <div>
+                                                                                 <div className="font-medium text-foreground text-sm">{product.name}</div>
+                                                                                 <div className="text-xs text-muted-foreground">{product.category}</div>
+                                                                             </div>
+                                                                             <div className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                                                                                 Est: {product.quantity}
+                                                                             </div>
+                                                                         </button>
+                                                                     ))
+                                                             )}
+                                                         </motion.div>
+                                                     )}
+                                                 </div>
+                                             </div>
 
                                             <div>
                                                 <Label htmlFor="quantity">Quantidade *</Label>
@@ -680,18 +797,95 @@ const SalesNew = () => {
                                 {/* Sale Details */}
                                 <div className="space-y-4 border-t pt-4">
                                     <div>
-                                        <Label htmlFor="payment">Método de Pagamento *</Label>
-                                        <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecione o método" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                                                <SelectItem value="pix">PIX</SelectItem>
-                                                <SelectItem value="cartao">Cartão</SelectItem>
-                                                <SelectItem value="revenda">Revenda</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <Label>Métodos de Pagamento *</Label>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => setPaymentMethods([
+                                                    ...paymentMethods,
+                                                    { method: "dinheiro", amount: 0 }
+                                                ])}
+                                                className="h-8"
+                                            >
+                                                <Plus className="w-3 h-3 mr-1" />
+                                                Adicionar método
+                                            </Button>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            {paymentMethods.map((pm, idx) => (
+                                                <div key={idx} className="flex gap-2 items-end">
+                                                    <Select 
+                                                        value={pm.method}
+                                                        onValueChange={(value) => {
+                                                            const updated = [...paymentMethods];
+                                                            updated[idx].method = value;
+                                                            setPaymentMethods(updated);
+                                                        }}
+                                                    >
+                                                        <SelectTrigger className="flex-1 max-w-xs">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="dinheiro">💵 Dinheiro</SelectItem>
+                                                            <SelectItem value="pix">📱 PIX</SelectItem>
+                                                            <SelectItem value="cartao">💳 Cartão</SelectItem>
+                                                            <SelectItem value="revenda">🔄 Revenda</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <div className="flex-1">
+                                                        <Input
+                                                            type="number"
+                                                            step="0.01"
+                                                            placeholder="R$ 0.00"
+                                                            value={pm.amount || ""}
+                                                            onChange={(e) => {
+                                                                const updated = [...paymentMethods];
+                                                                updated[idx].amount = parseFloat(e.target.value) || 0;
+                                                                setPaymentMethods(updated);
+                                                            }}
+                                                            max={calculateTotal()}
+                                                        />
+                                                    </div>
+                                                    {paymentMethods.length > 1 && (
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={() => setPaymentMethods(paymentMethods.filter((_, i) => i !== idx))}
+                                                            className="text-destructive hover:bg-destructive/10"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Payment methods validation */}
+                                        <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border">
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="text-muted-foreground">Total da venda:</span>
+                                                <span className="font-semibold">R$ {calculateTotal().toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-muted-foreground">Total pagamento:</span>
+                                                <span className={`font-semibold ${
+                                                    Math.abs(calculatePaymentMethodsTotal() - calculateTotal()) < 0.01
+                                                        ? "text-success"
+                                                        : "text-destructive"
+                                                }`}>
+                                                    R$ {calculatePaymentMethodsTotal().toFixed(2)}
+                                                </span>
+                                            </div>
+                                            {Math.abs(calculatePaymentMethodsTotal() - calculateTotal()) > 0.01 && (
+                                                <p className="text-xs text-destructive mt-2">
+                                                    ⚠️ Total de pagamento não corresponde ao total da venda
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div>
@@ -706,7 +900,11 @@ const SalesNew = () => {
 
                                     <Button
                                         onClick={handleSubmitSale}
-                                        disabled={submitting || saleItems.length === 0}
+                                        disabled={
+                                            submitting || 
+                                            saleItems.length === 0 ||
+                                            Math.abs(calculatePaymentMethodsTotal() - calculateTotal()) > 0.01
+                                        }
                                         className="w-full"
                                     >
                                         {submitting ? "Processando..." : "Confirmar Venda"}

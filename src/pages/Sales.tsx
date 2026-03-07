@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { ShoppingCart, Plus, AlertCircle, Eye, EyeOff, Download } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ShoppingCart, Plus, AlertCircle, Eye, EyeOff, Download, Search, X } from "lucide-react";
 import { motion } from "framer-motion";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,9 @@ const Sales = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const productSearchRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [saleForm, setSaleForm] = useState({
     product_id: "",
@@ -130,6 +133,18 @@ const Sales = () => {
     fetchProducts();
     fetchEmployees();
     fetchSales();
+  }, []);
+
+  // Fechar dropdown quando clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (productSearchRef.current && !productSearchRef.current.contains(event.target as Node)) {
+        setShowProductDropdown(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleAddSale = async () => {
@@ -359,7 +374,10 @@ const Sales = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* New Sale Button */}
         <div className="mb-6 md:mb-8">
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={dialogOpen} onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) setProductSearch("");
+          }}>
             <DialogTrigger asChild>
               <Button className="gap-2 w-full md:w-auto">
                 <Plus className="w-4 h-4" />
@@ -390,18 +408,81 @@ const Sales = () => {
 
                  <div>
                    <Label htmlFor="product">Produto *</Label>
-                   <Select value={saleForm.product_id} onValueChange={(value) => setSaleForm({ ...saleForm, product_id: value })}>
-                     <SelectTrigger>
-                       <SelectValue placeholder="Selecione um produto" />
-                     </SelectTrigger>
-                     <SelectContent>
-                       {products.map((product) => (
-                         <SelectItem key={product.id} value={product.id}>
-                           {product.name} (Estoque: {product.quantity})
-                         </SelectItem>
-                       ))}
-                     </SelectContent>
-                   </Select>
+                   <div ref={productSearchRef} className="relative">
+                     <div className="relative">
+                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                       <Input
+                         id="product-search"
+                         type="text"
+                         placeholder="Digite o nome do produto..."
+                         value={productSearch}
+                         onChange={(e) => {
+                           setProductSearch(e.target.value);
+                           setShowProductDropdown(true);
+                         }}
+                         onFocus={() => setShowProductDropdown(true)}
+                         className="pl-10 pr-10"
+                       />
+                       {productSearch && (
+                         <button
+                           type="button"
+                           onClick={() => {
+                             setProductSearch("");
+                             setShowProductDropdown(false);
+                           }}
+                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                         >
+                           <X className="w-4 h-4" />
+                         </button>
+                       )}
+                     </div>
+                     
+                     {showProductDropdown && (
+                       <motion.div
+                         initial={{ opacity: 0, y: -10 }}
+                         animate={{ opacity: 1, y: 0 }}
+                         exit={{ opacity: 0, y: -10 }}
+                         className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto"
+                       >
+                         {products
+                           .filter((product) =>
+                             product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+                             product.category.toLowerCase().includes(productSearch.toLowerCase())
+                           )
+                           .length === 0 ? (
+                           <div className="p-4 text-center text-muted-foreground text-sm">
+                             Nenhum produto encontrado
+                           </div>
+                         ) : (
+                           products
+                             .filter((product) =>
+                               product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+                               product.category.toLowerCase().includes(productSearch.toLowerCase())
+                             )
+                             .map((product) => (
+                               <button
+                                 key={product.id}
+                                 type="button"
+                                 onClick={() => {
+                                   setSaleForm({ ...saleForm, product_id: product.id });
+                                   setProductSearch(product.name);
+                                   setShowProductDropdown(false);
+                                 }}
+                                 className="w-full text-left px-4 py-2 hover:bg-muted/50 border-b border-border/50 last:border-0 transition-colors flex justify-between items-center"
+                               >
+                                 <div>
+                                   <div className="font-medium text-foreground text-sm">{product.name}</div>
+                                   <div className="text-xs text-muted-foreground">{product.category}</div>
+                                 </div>
+                                 <div className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                                   Est: {product.quantity}
+                                 </div>
+                               </button>
+                             ))
+                         )}
+                       </motion.div>
+                     )}
+                   </div>
                  </div>
 
                 {saleForm.product_id && (

@@ -69,13 +69,20 @@ const Inventory = () => {
     }, []);
 
     const filtered = products.filter(
-        (p) =>
-            (p.name.toLowerCase().includes(search.toLowerCase()) ||
-                p.category.toLowerCase().includes(search.toLowerCase()) ||
-                p.supplier.toLowerCase().includes(search.toLowerCase()) ||
-                (p.code && p.code.toLowerCase().includes(search.toLowerCase())) ||
-                (p.description && p.description.toLowerCase().includes(search.toLowerCase()))) &&
-            (p.store === selectedStore)
+        (p) => {
+            const searchLower = search.toLowerCase();
+            return (
+                p.name.toLowerCase().includes(searchLower) ||
+                p.category.toLowerCase().includes(searchLower) ||
+                p.supplier.toLowerCase().includes(searchLower) ||
+                (p.code && p.code.toLowerCase().includes(searchLower)) ||
+                (p.description && p.description.toLowerCase().includes(searchLower)) ||
+                (p.store && p.store.toLowerCase().includes(searchLower)) ||
+                p.quantity.toString().includes(searchLower) ||
+                p.price.toString().includes(searchLower) ||
+                (p.cost_price && p.cost_price.toString().includes(searchLower))
+            );
+        }
     );
 
     const handleAdd = async () => {
@@ -271,21 +278,14 @@ const Inventory = () => {
             <div className="mb-6 flex gap-4 items-end">
                 <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar produto, categoria ou fornecedor..." className="pl-10 bg-card border-border" />
-                </div>
-                <div className="w-40">
-                    <Label htmlFor="store-select" className="text-xs text-muted-foreground mb-2 block">Loja</Label>
-                    <Select value={selectedStore} onValueChange={setSelectedStore}>
-                        <SelectTrigger id="store-select"><SelectValue /></SelectTrigger>
-                        <SelectContent>{stores.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome, categoria, fornecedor, código, descrição, loja, quantidade ou preço..." className="pl-10 bg-card border-border" />
                 </div>
             </div>
 
             {/* Table */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card">
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-max">
+                    <table className="w-full">
                         <thead>
                             <tr className="border-b border-border">
                                 <th className="text-left p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produto</th>
@@ -319,13 +319,13 @@ const Inventory = () => {
                                                                      </span>
                                                                  )}
                                                              </div>
-                                                             <div className="grid grid-cols-4 gap-4 text-xs text-muted-foreground mt-2">
+                                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 text-xs text-muted-foreground mt-2">
                                                                  <div><span className="font-medium">Cat:</span> {p.category}</div>
                                                                  <div><span className="font-medium">Loja:</span> {p.store || "—"}</div>
                                                                  <div><span className="font-medium">Forn:</span> {p.supplier || "—"}</div>
                                                                  <div className={cn("font-bold", isLow ? "text-destructive" : "text-foreground")}><span className="font-medium">Qtd:</span> {p.quantity}</div>
                                                              </div>
-                                                             <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground mt-2">
+                                                             <div className="grid grid-cols-2 gap-2 md:gap-4 text-xs text-muted-foreground mt-2">
                                                                  <div><span className="font-medium">Custo:</span> R$ {(p.cost_price || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
                                                                  <div><span className="font-medium">Venda:</span> R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
                                                              </div>
