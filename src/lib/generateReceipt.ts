@@ -78,39 +78,22 @@ export const generateReceipt = async (data: ReceiptData): Promise<Blob> => {
     yPosition += 10;
   }
 
-  // Nome da loja (centralizado)
+  // Nome da loja (centralizado, com suporte a quebras de linha)
   pdf.setFontSize(headerFont);
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(...primaryColor);
-  pdf.text(data.storeName, pageWidth / 2, yPosition, { align: "center" });
-
-  yPosition += 8;
+  const storeNameLines = data.storeName.split('\n');
+  let storeNameY = yPosition;
+  storeNameLines.forEach((line) => {
+    pdf.text(line, pageWidth / 2, storeNameY, { align: "center" });
+    storeNameY += 6;
+  });
+  yPosition = storeNameY + 2;
 
   // Separador
   pdf.setDrawColor(...primaryColor);
   pdf.line(15, yPosition, pageWidth - 15, yPosition);
   yPosition += 5;
-
-  // Endereço, Telefone e Email
-  pdf.setFontSize(smallFont);
-  pdf.setFont("helvetica", "normal");
-  pdf.setTextColor(80, 80, 80);
-  
-  const addressLines = pdf.splitTextToSize(data.storeAddress, pageWidth - 30);
-  pdf.text(addressLines, pageWidth / 2, yPosition, { align: "center" });
-  yPosition += addressLines.length * 3 + 2;
-  
-  pdf.text(`Telefone: ${data.storeContact}`, pageWidth / 2, yPosition, {
-    align: "center",
-  });
-  yPosition += 4;
-  
-  if (data.storeEmail) {
-    pdf.text(`e-mail: ${data.storeEmail}`, pageWidth / 2, yPosition, {
-      align: "center",
-    });
-    yPosition += 4;
-  }
 
   // Frase evangélica
   pdf.setFont("helvetica", "italic");
@@ -235,6 +218,20 @@ export const generateReceipt = async (data: ReceiptData): Promise<Blob> => {
     });
 
     yPosition += 32;
+
+    // Exclusões da garantia
+    pdf.setFillColor(255, 240, 240); // Rosa claro (igual garantia)
+    pdf.rect(dataX, yPosition, dataWidth, 20, "F");
+    
+    pdf.setFontSize(12); // Mesmo tamanho da garantia
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(180, 0, 0); // Vermelho
+    
+    const exclusionText = "- Não cobrimos quebra de para-brisas, vigias ou vidros de portas.";
+    const exclusionLines = pdf.splitTextToSize(exclusionText, dataWidth - 4);
+    pdf.text(exclusionLines, dataX + 2, yPosition + 5);
+    
+    yPosition += 24;
   }
 
   // ============ MÉTODO DE PAGAMENTO ============
