@@ -252,10 +252,10 @@ const Inventory = () => {
                                           <SelectContent>{productCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                                       </Select>
                                   </div>
-                                  <div className="p-3 bg-blue-100 rounded-lg border-2 border-blue-300">
-                                      <Label className="font-bold text-blue-700">🏪 LOJA *</Label>
+                                  <div className="p-3 bg-primary/20 rounded-lg border-2 border-primary">
+                                      <Label className="font-bold text-primary">🏪 LOJA *</Label>
                                       <Select value={form.store} onValueChange={(v) => setForm({ ...form, store: v })}>
-                                          <SelectTrigger className="border-blue-400 bg-white"><SelectValue placeholder="Selecione a loja..." /></SelectTrigger>
+                                          <SelectTrigger className="border-primary/50 bg-primary/10 text-foreground font-semibold"><SelectValue placeholder="Selecione a loja..." /></SelectTrigger>
                                           <SelectContent>{stores.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                                       </Select>
                                   </div>
@@ -282,9 +282,9 @@ const Inventory = () => {
                     <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome, categoria, fornecedor, código, descrição..." className="pl-10 bg-card border-border" />
                 </div>
                 <div className="min-w-[200px]">
-                    <Label className="text-xs text-muted-foreground mb-1 block">🏪 Filtrar por Loja</Label>
+                    <Label className="text-xs font-bold text-primary mb-1 block">🏪 Filtrar por Loja</Label>
                     <Select value={selectedStore} onValueChange={setSelectedStore}>
-                        <SelectTrigger className="bg-card border-border"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectTrigger className="bg-primary/20 border-2 border-primary text-foreground font-semibold"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="Todas">Todas as Lojas</SelectItem>
                             {stores.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}

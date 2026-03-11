@@ -1520,10 +1520,10 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                                                   </SelectContent>
                                               </Select>
                                           </div>
-                                          <div className="p-3 bg-blue-100 rounded-lg border-2 border-blue-300">
-                                              <Label className="font-bold text-blue-700">🏪 LOJA *</Label>
+                                          <div className="p-3 bg-primary/20 rounded-lg border-2 border-primary">
+                                              <Label className="font-bold text-primary">🏪 LOJA *</Label>
                                               <Select value={invForm.store} onValueChange={(v) => setInvForm({ ...invForm, store: v })}>
-                                                  <SelectTrigger className="border-blue-400 bg-white"><SelectValue placeholder="Selecione a loja..." /></SelectTrigger>
+                                                  <SelectTrigger className="border-primary/50 bg-primary/10 text-foreground font-semibold"><SelectValue placeholder="Selecione a loja..." /></SelectTrigger>
                                                   <SelectContent>
                                                       {stores.map((s) => (
                                                           <SelectItem key={s} value={s}>
