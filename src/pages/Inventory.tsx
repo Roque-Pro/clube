@@ -71,16 +71,19 @@ const Inventory = () => {
     const filtered = products.filter(
         (p) => {
             const searchLower = search.toLowerCase();
+            const storeMatch = selectedStore === "Todas" || (p.store === selectedStore);
             return (
-                p.name.toLowerCase().includes(searchLower) ||
-                p.category.toLowerCase().includes(searchLower) ||
-                p.supplier.toLowerCase().includes(searchLower) ||
-                (p.code && p.code.toLowerCase().includes(searchLower)) ||
-                (p.description && p.description.toLowerCase().includes(searchLower)) ||
-                (p.store && p.store.toLowerCase().includes(searchLower)) ||
-                p.quantity.toString().includes(searchLower) ||
-                p.price.toString().includes(searchLower) ||
-                (p.cost_price && p.cost_price.toString().includes(searchLower))
+                storeMatch && (
+                    p.name.toLowerCase().includes(searchLower) ||
+                    p.category.toLowerCase().includes(searchLower) ||
+                    p.supplier.toLowerCase().includes(searchLower) ||
+                    (p.code && p.code.toLowerCase().includes(searchLower)) ||
+                    (p.description && p.description.toLowerCase().includes(searchLower)) ||
+                    (p.store && p.store.toLowerCase().includes(searchLower)) ||
+                    p.quantity.toString().includes(searchLower) ||
+                    p.price.toString().includes(searchLower) ||
+                    (p.cost_price && p.cost_price.toString().includes(searchLower))
+                )
             );
         }
     );
@@ -111,9 +114,9 @@ const Inventory = () => {
             if (error) throw error;
 
             // Log da ação
-            if (data && data[0]) {
-                logAction("create", "products", data[0].id, form.name, `Código: ${form.code || "N/A"} - Categoria: ${form.category} - Qtd: ${form.quantity} - Fornecedor: ${form.supplier || "N/A"}`);
-            }
+             if (data && data[0]) {
+                 logAction("create", "products", data[0].id, form.name, `Código: ${form.code || "N/A"} - Categoria: ${form.category} - 🏪 Loja: ${form.store || "Loja 1"} - Qtd: ${form.quantity} - Fornecedor: ${form.supplier || "N/A"}`);
+             }
 
             toast({ title: "Produto cadastrado com sucesso!" });
             setForm({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", costPrice: "", store: "Loja 1", code: "", description: "" });
@@ -240,25 +243,23 @@ const Inventory = () => {
                                 <DialogTitle className="font-display">Cadastrar Produto</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4">
-                                 <div><Label>Código</Label><Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="Código do produto" /></div>
-                                 <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nome do produto" /></div>
-                                 <div className="grid grid-cols-2 gap-4">
-                                     <div>
-                                         <Label>Categoria *</Label>
-                                         <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                                             <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                             <SelectContent>{productCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                                         </Select>
-                                     </div>
-                                     <div>
-                                         <Label>Loja *</Label>
-                                         <Select value={form.store} onValueChange={(v) => setForm({ ...form, store: v })}>
-                                             <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                             <SelectContent>{stores.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                                         </Select>
-                                     </div>
-                                 </div>
-                                 <div><Label>Fornecedor</Label><Input value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })} placeholder="Nome do fornecedor" /></div>
+                                  <div><Label>Código</Label><Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="Código do produto" /></div>
+                                  <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nome do produto" /></div>
+                                  <div>
+                                      <Label className="font-bold">Categoria *</Label>
+                                      <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                                          <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                          <SelectContent>{productCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                      </Select>
+                                  </div>
+                                  <div className="p-3 bg-blue-100 rounded-lg border-2 border-blue-300">
+                                      <Label className="font-bold text-blue-700">🏪 LOJA *</Label>
+                                      <Select value={form.store} onValueChange={(v) => setForm({ ...form, store: v })}>
+                                          <SelectTrigger className="border-blue-400 bg-white"><SelectValue placeholder="Selecione a loja..." /></SelectTrigger>
+                                          <SelectContent>{stores.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                                      </Select>
+                                  </div>
+                                  <div><Label>Fornecedor</Label><Input value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })} placeholder="Nome do fornecedor" /></div>
                                  <div className="grid grid-cols-2 gap-4">
                                      <div><Label>Quantidade *</Label><Input type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></div>
                                      <div><Label>Qtd Mínima</Label><Input type="number" value={form.minQuantity} onChange={(e) => setForm({ ...form, minQuantity: e.target.value })} /></div>
@@ -275,10 +276,20 @@ const Inventory = () => {
                 }
             />
 
-            <div className="mb-6 flex gap-4 items-end">
-                <div className="relative flex-1 max-w-md">
+            <div className="mb-6 flex gap-4 items-end flex-wrap">
+                <div className="relative flex-1 min-w-[250px] max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome, categoria, fornecedor, código, descrição, loja, quantidade ou preço..." className="pl-10 bg-card border-border" />
+                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome, categoria, fornecedor, código, descrição..." className="pl-10 bg-card border-border" />
+                </div>
+                <div className="min-w-[200px]">
+                    <Label className="text-xs text-muted-foreground mb-1 block">🏪 Filtrar por Loja</Label>
+                    <Select value={selectedStore} onValueChange={setSelectedStore}>
+                        <SelectTrigger className="bg-card border-border"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Todas">Todas as Lojas</SelectItem>
+                            {stores.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 
