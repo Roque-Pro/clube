@@ -27,7 +27,7 @@ const AppLayout = () => {
         </button>
         <div className="flex items-center gap-2 ml-4">
           <img 
-            src="/src/img/iguacu_vidros.PNG" 
+            src="/img/iguacu_vidros.PNG" 
             alt="Iguaçu Auto Vidros" 
             className="h-10 object-contain"
           />

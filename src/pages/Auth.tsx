@@ -71,7 +71,7 @@ const Auth = () => {
         <div className="text-center mb-8">
           <div className="mx-auto mb-4">
             <img 
-              src="/src/img/iguacu_vidros_black.png" 
+              src="/img/iguacu_vidros_black.png" 
               alt="Iguacu Auto Vidros" 
               className="h-40 object-contain mx-auto"
             />

@@ -141,7 +141,7 @@ const Landing = () => {
                             className="h-12 flex items-center"
                         >
                             <img 
-                                src="/src/img/logo.png" 
+                                src="/img/logo.png" 
                                 alt="Iguaçu Auto Vidros" 
                                 className="h-12 object-contain"
                             />
@@ -269,7 +269,7 @@ const Landing = () => {
                                     {/* Logo centered - large overlay */}
                                     <div className="absolute z-20 flex items-end justify-center" style={{width: '70%', left: 'calc(25% - 200px)', top: '50px', height: 'calc(100% - 50px)'}}>
                                         <img 
-                                            src={heroSlideIndex === 0 ? "/src/img/iguacu_vidros_white.png" : "/src/img/clube.png"} 
+                                            src={heroSlideIndex === 0 ? "/img/iguacu_vidros_white.png" : "/img/clube.png"} 
                                             alt={heroSlideIndex === 0 ? "Iguaçu" : "Clube do Vidro"} 
                                             className="h-full object-contain drop-shadow-2xl"
                                             style={{filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.6))'}}
