@@ -535,7 +535,7 @@ const AdminPanel = () => {
                         .eq("id", editingProduct.id);
 
                 if (error) throw error;
-                logAction("update", "products", editingProduct.id, editingProduct.name, `Atualizado: ${invForm.name} - Código: ${invForm.code || "N/A"}`);
+                logAction("update", "products", editingProduct.id, editingProduct.name, `Atualizado: ${invForm.name} - Código: ${invForm.code || "N/A"} - 🏪 Loja: ${invForm.store || "Loja 1"}`);
                 toast({ title: "Produto atualizado com sucesso!" });
             } else {
                 // Criar novo produto
@@ -1504,29 +1504,44 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                                               disabled={editingProduct ? false : false}
                                           />
                                       </div>
-                                     <div>
-                                         <Label>Categoria *</Label>
-                                         <Select value={invForm.category} onValueChange={(v) => setInvForm({ ...invForm, category: v })}>
-                                             <SelectTrigger>
-                                                 <SelectValue placeholder="Selecione..." />
-                                             </SelectTrigger>
-                                             <SelectContent>
-                                                 {productCategories.map((c) => (
-                                                     <SelectItem key={c} value={c}>
-                                                         {c}
-                                                     </SelectItem>
-                                                 ))}
-                                             </SelectContent>
-                                         </Select>
-                                     </div>
-                                     <div>
-                                         <Label>Fornecedor</Label>
-                                         <Input
-                                             value={invForm.supplier}
-                                             onChange={(e) => setInvForm({ ...invForm, supplier: e.target.value })}
-                                             placeholder="Nome do fornecedor"
-                                         />
-                                     </div>
+                                     <div className="grid grid-cols-2 gap-4">
+                                          <div>
+                                              <Label>Categoria *</Label>
+                                              <Select value={invForm.category} onValueChange={(v) => setInvForm({ ...invForm, category: v })}>
+                                                  <SelectTrigger>
+                                                      <SelectValue placeholder="Selecione..." />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                      {productCategories.map((c) => (
+                                                          <SelectItem key={c} value={c}>
+                                                              {c}
+                                                          </SelectItem>
+                                                      ))}
+                                                  </SelectContent>
+                                              </Select>
+                                          </div>
+                                          <div className="p-3 bg-blue-100 rounded-lg border-2 border-blue-300">
+                                              <Label className="font-bold text-blue-700">🏪 LOJA *</Label>
+                                              <Select value={invForm.store} onValueChange={(v) => setInvForm({ ...invForm, store: v })}>
+                                                  <SelectTrigger className="border-blue-400 bg-white"><SelectValue placeholder="Selecione a loja..." /></SelectTrigger>
+                                                  <SelectContent>
+                                                      {stores.map((s) => (
+                                                          <SelectItem key={s} value={s}>
+                                                              {s}
+                                                          </SelectItem>
+                                                      ))}
+                                                  </SelectContent>
+                                              </Select>
+                                          </div>
+                                      </div>
+                                      <div>
+                                          <Label>Fornecedor</Label>
+                                          <Input
+                                              value={invForm.supplier}
+                                              onChange={(e) => setInvForm({ ...invForm, supplier: e.target.value })}
+                                              placeholder="Nome do fornecedor"
+                                          />
+                                      </div>
                                      <div className="grid grid-cols-2 gap-4">
                                          <div>
                                              <Label>Quantidade {editingProduct ? "(somente leitura)" : "*"}</Label>
