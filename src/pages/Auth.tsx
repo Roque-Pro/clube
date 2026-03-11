@@ -52,11 +52,11 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center p-4">
       {/* Botão Voltar */}
       <button
         onClick={() => navigate("/")}
-        className="fixed top-6 left-6 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+        className="fixed top-6 left-6 flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
       >
         <ArrowLeft className="w-5 h-5" />
         <span className="text-sm font-medium">Voltar</span>
@@ -69,16 +69,18 @@ const Auth = () => {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center glow-primary mx-auto mb-4">
-            <Shield className="w-10 h-10 text-primary-foreground" />
+          <div className="mx-auto mb-4">
+            <img 
+              src="/src/img/iguacu_vidros_black.png" 
+              alt="Iguacu Auto Vidros" 
+              className="h-40 object-contain mx-auto"
+            />
           </div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Clube do Vidro</h1>
-          <p className="text-sm text-muted-foreground mt-1">Iguaçu Auto Vidros</p>
         </div>
 
         {/* Form */}
-        <div className="glass-card p-8">
-          <h2 className="text-lg font-semibold text-foreground mb-6">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border-2 border-blue-100">
+          <h2 className="text-lg font-semibold text-blue-900 mb-6">
             Acessar Sistema
           </h2>
 

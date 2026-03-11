@@ -14,24 +14,23 @@ const AppLayout = () => {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Mobile Header */}
-      <header className="fixed top-0 left-0 right-0 h-16 bg-sidebar border-b border-sidebar-border z-50 md:hidden flex items-center px-4">
+      <header className="fixed top-0 left-0 right-0 h-16 bg-[#2c3493] border-b border-white/10 z-50 md:hidden flex items-center px-4">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 hover:bg-sidebar-accent rounded-lg transition-colors"
+          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
         >
           {sidebarOpen ? (
-            <X className="w-6 h-6 text-foreground" />
+            <X className="w-6 h-6 text-white" />
           ) : (
-            <Menu className="w-6 h-6 text-foreground" />
+            <Menu className="w-6 h-6 text-white" />
           )}
         </button>
         <div className="flex items-center gap-2 ml-4">
-          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-            <span className="text-sm font-bold text-primary-foreground">CD</span>
-          </div>
-          <div>
-            <h1 className="text-sm font-display font-bold text-foreground">Clube do Vidro</h1>
-          </div>
+          <img 
+            src="/src/img/iguacu_vidros.PNG" 
+            alt="Iguaçu Auto Vidros" 
+            className="h-10 object-contain"
+          />
         </div>
       </header>
 

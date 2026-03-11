@@ -21,18 +21,14 @@ const AppSidebar = ({ onClose }: AppSidebarProps) => {
   ];
 
   return (
-    <aside className="h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
+    <aside className="h-screen w-64 bg-[#2c3493] border-r border-sidebar-border flex flex-col">
       {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center glow-primary">
-            <Shield className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-lg font-display font-bold text-foreground">Clube do Vidro</h1>
-            <p className="text-xs text-muted-foreground">Iguaçu Auto Vidros</p>
-          </div>
-        </div>
+      <div className="p-6 border-b border-white/10 flex items-center justify-center">
+        <img 
+          src="/src/img/iguacu_vidros.PNG" 
+          alt="Iguaçu Auto Vidros" 
+          className="h-24 object-contain"
+        />
       </div>
 
       {/* Navigation */}
@@ -74,8 +70,11 @@ const AppSidebar = ({ onClose }: AppSidebarProps) => {
           <LogOut className="w-4 h-4" />
           Sair
         </button>
-        <p className="text-xs text-muted-foreground text-center">
+        <p className="text-xs text-muted-foreground text-center mb-2">
           © 2026 Iguaçu Auto Vidros
+        </p>
+        <p className="text-xs text-muted-foreground text-center">
+          Desenvolvido por <a href="https://www.technexos.com.br" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white font-semibold">TechNexos</a>
         </p>
       </div>
     </aside>

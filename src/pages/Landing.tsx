@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     Shield,
     Zap,
@@ -18,6 +18,8 @@ import {
     Heart,
     Award,
     MapPin,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +28,8 @@ const Landing = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [submitted, setSubmitted] = useState(false);
+    const [slideIndex, setSlideIndex] = useState(0);
+    const [heroSlideIndex, setHeroSlideIndex] = useState(0);
 
     const handleSubscribe = (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,37 +61,97 @@ const Landing = () => {
         },
     };
 
-    // Calculate annual pricing
-    const monthlyPrice = 19.9;
-    const annualPrice = 239.00;
-    const annualPriceSavings = (monthlyPrice * 0.15 * 12).toFixed(2); // Simulating ~15% savings
+    const slides = [
+        {
+            title: "Parabrisas",
+            subtitle: "Reparo e Troca",
+            description: "Vidros de qualidade com instalação profissional",
+            icon: "🪟",
+        },
+        {
+            title: "Vigias",
+            subtitle: "Laterais e Traseiras",
+            description: "Vidros laterais e traseiros com ajuste preciso",
+            icon: "🚗",
+        },
+        {
+            title: "Faróis",
+            subtitle: "Reparos e Restauração",
+            description: "Restauração de faróis opacos e reparos profissionais",
+            icon: "💡",
+        },
+        {
+            title: "Vidros de Janelas",
+            subtitle: "Fixos e Móveis",
+            description: "Toda vidraçaria automotiva em um único lugar",
+            icon: "🔧",
+        },
+    ];
+
+    const heroSlides = [
+        {
+            title: "QUEM SOMOS.",
+            subtitle: "Iguaçu Auto Vidros",
+            description: "Mais do que vidro automotivo, entregamos confiança e segurança para cada cliente. Somos especialistas em qualidade.",
+            image: "👤",
+            bgImage: "linear-gradient(135deg, rgba(31, 66, 153, 0.70) 0%, rgba(59, 130, 246, 0.70) 100%), url('https://www.canaldapeca.com.br/blog/wp-content/uploads/2018/01/bigstock-Automobile-glaziers-workers-re-63613267-1024x670.jpg')",
+            bgPosition: "center",
+        },
+        {
+            title: "CLUBE DO VIDRO",
+            subtitle: "Comunidade Premium",
+            description: "Junte-se à nossa comunidade exclusiva de clientes VIP. Receba benefícios especiais, descontos prioritários e atendimento personalizado.",
+            image: "💎",
+            bgImage: "linear-gradient(135deg, #5B4A9E 0%, #8B5FBF 50%, #6F4FA0 100%)",
+        },
+    ];
+
+    const nextSlide = () => {
+        setSlideIndex((prev) => (prev + 1) % slides.length);
+    };
+
+    const prevSlide = () => {
+        setSlideIndex((prev) => (prev - 1 + slides.length) % slides.length);
+    };
+
+    const nextHeroSlide = () => {
+        setHeroSlideIndex((prev) => (prev + 1) % heroSlides.length);
+    };
+
+    const prevHeroSlide = () => {
+        setHeroSlideIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+    };
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white via-white to-blue-50 overflow-hidden">
-        {/* Animated background elements */}
-        <div className="fixed inset-0 -z-10">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl opacity-40 animate-pulse" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl opacity-40 animate-pulse" />
-          <div className="absolute top-1/2 right-0 w-80 h-80 bg-blue-100/30 rounded-full blur-3xl opacity-30" />
-        </div>
+        <div className="min-h-screen bg-gradient-to-b from-white via-white to-blue-50 overflow-hidden">
+            {/* Animated background elements */}
+            <div className="fixed inset-0 -z-10">
+                <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl opacity-40 animate-pulse" />
+                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl opacity-40 animate-pulse" />
+                <div className="absolute top-1/2 right-0 w-80 h-80 bg-blue-100/30 rounded-full blur-3xl opacity-30" />
+            </div>
 
-        {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-blue-200/30 bg-white/80">
+            {/* Header */}
+            <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-blue-200/30 bg-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
                     {/* Logo */}
-                    <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-3">
                         <motion.div
-                            whileHover={{ scale: 1.1, rotate: 5 }}
-                            className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/50"
-                          >
-                            <Shield className="w-6 h-6 text-white" />
+                            whileHover={{ scale: 1.1 }}
+                            className="h-12 flex items-center"
+                        >
+                            <img 
+                                src="/src/img/logo.png" 
+                                alt="Iguaçu Auto Vidros" 
+                                className="h-12 object-contain"
+                            />
                         </motion.div>
                         <div>
                             <h1 className="text-lg sm:text-xl font-display font-bold text-gray-900">
-                                Clube do Vidro
+                                Iguaçu Auto Vidros
                             </h1>
                             <p className="text-xs sm:text-sm text-gray-600">
-                                Iguaçu Auto Vidros
+                                Serviços Automotivos
                             </p>
                         </div>
                     </div>
@@ -126,379 +190,460 @@ const Landing = () => {
                 </div>
             </header>
 
-            {/* Hero Section */}
-            <section className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pt-20 pb-12 lg:pt-24 lg:pb-20">
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    className="text-center max-w-4xl mx-auto"
-                >
-
-
-                    {/* Main Headline */}
-                    <motion.h1
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3, duration: 0.8 }}
-                        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-black text-gray-900 mb-6 leading-tight"
-                    >
-                        Vidros{" "}
-                        <span className="bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">
-                            Perfeitos
-                        </span>
-                        <br />
-                        <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800">
-                            Carro Protegido
-                        </span>
-                    </motion.h1>
-
-                    {/* Subheadline */}
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4, duration: 0.8 }}
-                        className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed"
-                    >
-                        Seu carro merece cuidado. Nós oferecemos a tranquilidade que você procura com
-                        <strong className="text-blue-600"><span className="text-2xl sm:text-3xl md:text-4xl"> 3</span> trocas anuais, agendamento fácil e suporte 24/7.</strong>
-                    </motion.p>
-
-                    {/* CTA Buttons */}
+            {/* Hero Section - Full Screen Carousel */}
+            <section className="relative w-full min-h-screen overflow-hidden">
+                <AnimatePresence mode="wait">
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5, duration: 0.8 }}
-                        className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
-                    >
-                        <Button
-                          onClick={() => navigate("/plan-auth")}
-                          size="lg"
-                          className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold text-lg px-8 py-6 rounded-xl shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all gap-2 w-full sm:w-auto"
-                        >
-                          Assinar Agora <ArrowRight className="w-5 h-5" />
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            const element = document.getElementById("benefits");
-                            element?.scrollIntoView({ behavior: "smooth" });
-                          }}
-                          size="lg"
-                          variant="outline"
-                          className="border-2 border-gray-300 hover:border-blue-500 text-white hover:text-blue-600 font-bold text-lg px-8 py-6 rounded-xl w-full sm:w-auto"
-                        >
-                          <Zap className="w-5 h-5" />
-                          Ver Benefícios
-                        </Button>
-                    </motion.div>
-
-                    {/* Pricing Highlight */}
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.6, duration: 0.8 }}
-                      className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-2xl p-4 sm:p-8 max-w-2xl mx-auto shadow-2xl w-full"
-                    >
-                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-8">
-                            <div className="flex flex-col items-center justify-center sm:border-r-2 sm:border-blue-300">
-                                <p className="text-blue-600 text-xs sm:text-sm font-semibold uppercase tracking-wide mb-2 sm:mb-4">Plano Anual</p>
-                                <div className="flex items-baseline gap-0.5">
-                                    <span className="text-3xl sm:text-6xl font-display font-black text-blue-700">
-                                        {annualPrice.toFixed(2).split('.')[0]}
-                                    </span>
-                                    <span className="text-sm sm:text-xl text-blue-600 font-bold">{annualPrice.toFixed(2).split('.')[1] ? ',' + annualPrice.toFixed(2).split('.')[1] : ''}</span>
-                                </div>
-                                <p className="text-xs sm:text-base text-blue-600 font-semibold mt-0.5 sm:mt-1">R$</p>
-                                <p className="text-xs sm:text-sm text-blue-700 font-medium mt-2 sm:mt-4">
-                                    Renovação automática
-                                </p>
-                            </div>
-                            <div className="flex flex-col items-center justify-center">
-                                <p className="text-blue-600 text-xs sm:text-sm font-semibold uppercase tracking-wide mb-3 sm:mb-6">Incluso</p>
-                                <div className="flex items-center justify-center gap-2 sm:gap-4 mb-1 sm:mb-2">
-                                    <Shield className="w-5 h-5 sm:w-8 sm:h-8 text-green-500 flex-shrink-0" />
-                                    <p className="text-4xl sm:text-7xl font-display font-black text-green-600 leading-none">
-                                        3
-                                    </p>
-                                </div>
-                                <p className="text-xs sm:text-base text-blue-700 font-semibold">
-                                    Trocas de Vidro
-                                </p>
-                                <p className="text-xs sm:text-sm text-blue-600 mt-0.5 sm:mt-1">
-                                    por ano
-                                </p>
-                            </div>
-                        </div>
-                    </motion.div>
-
-                    {/* Scroll indicator */}
-                    <motion.div
-                      animate={{ y: [0, 10, 0] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="mt-12"
-                    >
-                      <ChevronDown className="w-6 h-6 text-blue-600 mx-auto" />
-                    </motion.div>
-                </motion.div>
-
-                {/* Hero Image */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3, duration: 1 }}
-                    className="mt-12 w-full max-w-2xl"
-                >
-                    <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                        <img
-                            src="/img/iguacu_vidros.PNG"
-                            alt="Iguacu Auto Vidros - Filial"
-                            className="w-full h-auto object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 1, duration: 0.6 }}
-                            className="absolute bottom-6 left-6 bg-white/95 backdrop-blur-md rounded-xl p-4 flex items-center gap-3 shadow-xl"
-                        >
-                            <Check className="w-5 h-5 text-green-600" />
-                            <div>
-                                <p className="text-sm font-bold text-gray-900">
-                                    Profissionais Certificados
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                    15+ anos de experiência
-                                </p>
-                            </div>
-                        </motion.div>
-                    </div>
-                </motion.div>
-            </section>
-
-            {/* Problem Section - Why You Need Us */}
-            <section className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white">
-                <div className="max-w-6xl mx-auto">
-                    <motion.div
+                        key={heroSlideIndex}
                         initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         transition={{ duration: 0.8 }}
-                        viewport={{ once: true }}
-                        className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center"
+                        className="absolute inset-0"
                     >
-                        {/* Left side - Text */}
-                        <div>
-                            <motion.div
-                                initial={{ opacity: 0, x: -30 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.8 }}
-                                viewport={{ once: true }}
-                            >
-                                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black text-gray-900 mb-6">
-                                    Por que seu carro precisa de um plano?
-                                </h2>
-                                <p className="text-lg sm:text-xl text-gray-600 mb-6 leading-relaxed">
-                                    Vidros trincados comprometem sua segurança na estrada. Uma simples
-                                    <strong> pedra no asfalto pode custar caro.</strong>
-                                </p>
-                                <p className="text-lg sm:text-xl text-gray-600 mb-8 leading-relaxed">
-                                    Por isso criamos o Clube do Vidro: para que você dirija com
-                                    <strong> segurança e tranquilidade,</strong> sem se preocupar com
-                                    custos inesperados.
-                                </p>
+                        {/* Background with overlay */}
+                        <div
+                            className="absolute inset-0 bg-cover bg-center"
+                            style={{
+                                backgroundImage: heroSlides[heroSlideIndex].bgImage,
+                                backgroundSize: "cover",
+                                backgroundPosition: heroSlides[heroSlideIndex].bgPosition || "center",
+                            }}
+                        />
 
-                                {/* Benefits List */}
-                                <div className="space-y-4 mb-8">
-                                    <div className="flex items-start gap-4">
-                                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mt-1">
-                                            <Check className="w-4 h-4 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-gray-900">Sem Surpresas</p>
-                                            <p className="text-gray-600">
-                                                Custo fixo e previsível. Sem taxa de adesão ou multa de
-                                                cancelamento.
-                                            </p>
-                                        </div>
+                        {/* Content */}
+                        <div className="relative h-full w-full flex items-center justify-center">
+                            {/* Left side - Text content container */}
+                            <div className="w-full h-full flex flex-col justify-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                                <motion.div
+                                    initial={{ opacity: 0, x: -50 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.2, duration: 0.8 }}
+                                    className="space-y-4"
+                                >
+                                    <h1 className="text-5xl sm:text-6xl md:text-7xl font-display font-black text-white leading-tight">
+                                        {heroSlides[heroSlideIndex].title}
+                                    </h1>
+                                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold text-white/90">
+                                        {heroSlides[heroSlideIndex].subtitle}
+                                    </h2>
+                                    <p className="text-lg sm:text-xl text-white/80 max-w-xl leading-relaxed pt-2">
+                                        {heroSlides[heroSlideIndex].description}
+                                    </p>
+
+                                    {/* CTA Buttons */}
+                                    <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                                        {heroSlideIndex === 0 ? (
+                                            <Button
+                                                onClick={() => {
+                                                    const element = document.getElementById("servicos");
+                                                    element?.scrollIntoView({ behavior: "smooth" });
+                                                }}
+                                                size="lg"
+                                                className="bg-white/20 text-white hover:bg-white/30 font-bold text-xl px-10 py-7 rounded-full backdrop-blur-sm border-2 border-white/40 w-full sm:w-auto"
+                                            >
+                                                <Zap className="w-5 h-5" />
+                                                Ver Serviços
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                onClick={() => navigate("/plan-auth")}
+                                                size="lg"
+                                                className="bg-white text-purple-600 hover:bg-blue-50 font-bold text-xl px-10 py-7 rounded-full shadow-xl hover:shadow-2xl transition-all gap-2 w-full sm:w-auto"
+                                            >
+                                                Juntar-se ao Grupo <ArrowRight className="w-5 h-5" />
+                                            </Button>
+                                        )}
                                     </div>
-                                    <div className="flex items-start gap-4">
-                                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mt-1">
-                                            <Check className="w-4 h-4 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-gray-900">Agendamento Rápido</p>
-                                            <p className="text-gray-600">
-                                                5 minutos no app. Assistência em até 2 horas em emergências.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-4">
-                                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mt-1">
-                                            <Check className="w-4 h-4 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-gray-900">Qualidade Garantida</p>
-                                            <p className="text-gray-600">
-                                                Vidros homologados. Garantia de 12 meses em cada serviço.
-                                            </p>
-                                        </div>
+                                </motion.div>
+                            </div>
+
+                            {/* Right side - Hero slide image */}
+                            <motion.div
+                                initial={{ opacity: 0, x: 50, scale: 0.9 }}
+                                animate={{ opacity: 1, x: 0, scale: 1 }}
+                                transition={{ delay: 0.3, duration: 0.8 }}
+                                className="hidden lg:flex absolute right-0 bottom-0 w-1/2 h-full items-center justify-end pr-16 z-20"
+                            >
+                                <div className="relative w-full h-full flex items-center justify-center">
+                                    {/* Logo centered - large overlay */}
+                                    <div className="absolute z-20 flex items-end justify-center" style={{width: '70%', left: 'calc(25% - 200px)', top: '50px', height: 'calc(100% - 50px)'}}>
+                                        <img 
+                                            src={heroSlideIndex === 0 ? "/src/img/iguacu_vidros_white.png" : "/src/img/clube.png"} 
+                                            alt={heroSlideIndex === 0 ? "Iguaçu" : "Clube do Vidro"} 
+                                            className="h-full object-contain drop-shadow-2xl"
+                                            style={{filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.6))'}}
+                                        />
                                     </div>
                                 </div>
                             </motion.div>
                         </div>
 
-                        {/* Right side - Stats Card */}
+                        {/* Navigation Controls */}
+                        <div className="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-8 z-20">
+                            <button
+                                onClick={prevHeroSlide}
+                                className="p-3 hover:bg-white/20 rounded-full transition-colors backdrop-blur-sm border border-white/40 text-white"
+                                aria-label="Slide anterior"
+                            >
+                                <ChevronLeft className="w-6 h-6" />
+                            </button>
+
+                            {/* Dots */}
+                            <div className="flex gap-3">
+                                {heroSlides.map((_, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setHeroSlideIndex(index)}
+                                        className={`rounded-full transition-all backdrop-blur-sm ${
+                                            index === heroSlideIndex
+                                                ? "bg-white w-8 h-3"
+                                                : "bg-white/40 w-3 h-3 hover:bg-white/60"
+                                        }`}
+                                        aria-label={`Ir para slide ${index + 1}`}
+                                    />
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={nextHeroSlide}
+                                className="p-3 hover:bg-white/20 rounded-full transition-colors backdrop-blur-sm border border-white/40 text-white"
+                                aria-label="Próximo slide"
+                            >
+                                <ChevronRight className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        {/* Slide Counter */}
+                        <div className="absolute bottom-24 left-8 text-white/60 text-sm font-semibold">
+                            {heroSlideIndex + 1} / {heroSlides.length}
+                        </div>
+                    </motion.div>
+                </AnimatePresence>
+
+                {/* Scroll indicator */}
+                <motion.div
+                    animate={{ y: [0, 10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute bottom-8 right-8 text-white z-20"
+                >
+                    <ChevronDown className="w-6 h-6" />
+                </motion.div>
+            </section>
+
+            {/* Success Story Section */}
+            <section className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-blue-50">
+                <div className="max-w-6xl mx-auto">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                        viewport={{ once: true }}
+                        className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+                    >
+                        {/* Video */}
+                        <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+                            <iframe
+                                width="100%"
+                                height="400"
+                                src="https://www.youtube.com/embed/PoNBRFUj-Z0"
+                                title="Nossa História de Sucesso"
+                                frameBorder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                className="rounded-2xl"
+                            />
+                        </div>
+
+                        {/* Text Content */}
                         <motion.div
                             initial={{ opacity: 0, x: 30 }}
                             whileInView={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.8 }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
                             viewport={{ once: true }}
-                            className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-3xl p-8 sm:p-12 shadow-xl"
+                            className="space-y-6"
                         >
-                            <h3 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 mb-8">
-                                Dados que Falam
-                            </h3>
-
-                            <div className="space-y-8">
-                                <div className="border-l-4 border-blue-600 pl-6">
-                                    <p className="text-5xl sm:text-6xl font-display font-black text-blue-600 mb-2">
-                                        27%
-                                    </p>
-                                    <p className="text-gray-700 text-lg font-semibold">
-                                        dos acidentes no Brasil são causados por problemas nos vidros
-                                    </p>
-                                </div>
-
-                                <div className="border-l-4 border-blue-500 pl-6">
-                                    <p className="text-5xl sm:text-6xl font-display font-black text-blue-600 mb-2">
-                                        R$ 800+
-                                    </p>
-                                    <p className="text-gray-700 text-lg font-semibold">
-                                        custa uma troca de vidro de qualidade no mercado
-                                    </p>
-                                </div>
-
-                                <div className="border-l-4 border-green-500 pl-6">
-                                    <p className="text-5xl sm:text-6xl font-display font-black text-green-600 mb-2">
-                                        2x
-                                    </p>
-                                    <p className="text-gray-700 text-lg font-semibold">
-                                        em média, quanto um carro sofre com vidros por ano
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Savings highlight */}
-                            <div className="mt-8 bg-white rounded-2xl p-6 border-2 border-blue-300">
-                                <p className="text-sm text-gray-600 mb-2">Com nosso plano, você economiza:</p>
-                                <p className="text-3xl sm:text-4xl font-display font-black text-blue-600">
-                                    R$ {(annualPrice).toFixed(2)}/ano
-                                </p>
-                                <p className="text-sm text-gray-600 mt-2">
-                                    Em comparação a pagar por troca no mercado
-                                </p>
-                            </div>
+                            <h2 className="text-4xl sm:text-5xl font-display font-black text-gray-900">
+                                Nossa História de Sucesso
+                            </h2>
+                            <p className="text-lg sm:text-xl text-gray-700 leading-relaxed">
+                                Com mais de 20 anos de excelência, a Iguaçu Auto Vidros consolidou-se como referência no mercado de vidraçaria automotiva. Nossa jornada é marcada pela dedicação à qualidade, inovação constante e, principalmente, pela confiança de milhares de clientes satisfeitos.
+                            </p>
+                            <p className="text-lg sm:text-xl text-gray-700 leading-relaxed">
+                                Investimos continuamente em tecnologia, treinamento de nossa equipe e na expansão de nossos serviços para sempre oferecer o melhor atendimento. Somos mais que um serviço, somos parceiros da sua segurança na estrada.
+                            </p>
                         </motion.div>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Benefits Section */}
-            <section
-                id="benefits"
-                className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-gray-50 to-white"
-            >
+            {/* Store Locations Section */}
+            <section className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white">
                 <div className="max-w-6xl mx-auto">
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                         viewport={{ once: true }}
-                        className="text-center mb-12 sm:mb-16"
+                        className="text-center mb-12"
                     >
-                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black text-gray-900 mb-4 sm:mb-6">
-                            Por que escolher o <span className="text-blue-600">Clube do Vidro</span>?
+                        <h2 className="text-4xl sm:text-5xl font-display font-black text-gray-900 mb-4">
+                            Nossas Lojas
                         </h2>
-                        <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
-                            Benefícios práticos que transformam a experiência de cuidar do seu carro
+                        <p className="text-lg text-gray-600">
+                            Visite-nos em uma de nossas unidades
+                        </p>
+                    </motion.div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* Store 1 */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8 }}
+                            viewport={{ once: true }}
+                            className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
+                        >
+                            <MapPin className="w-8 h-8 text-blue-600 mb-4" />
+                            <h3 className="text-2xl font-display font-bold text-gray-900 mb-2">
+                                Iguaçu Som e Acessórios
+                            </h3>
+                            <p className="text-gray-700 mb-6 leading-relaxed">
+                                Rua Carlos Marques Rollo 1123<br />
+                                Califórnia, Nova Iguaçu
+                            </p>
+                            <Button
+                                onClick={() => window.open("https://www.google.com/maps/search/Rua+Carlos+Marques+Rollo+1123+Califórnia+Nova+Iguaçu", "_blank")}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                            >
+                                <MapPin className="w-4 h-4 mr-2" />
+                                Ver no Mapa
+                            </Button>
+                        </motion.div>
+
+                        {/* Store 2 */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, delay: 0.1 }}
+                            viewport={{ once: true }}
+                            className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
+                        >
+                            <MapPin className="w-8 h-8 text-blue-600 mb-4" />
+                            <h3 className="text-2xl font-display font-bold text-gray-900 mb-2">
+                                Iguaçu Auto Vidros
+                            </h3>
+                            <p className="text-gray-700 mb-6 leading-relaxed">
+                                Rua Oscar Soares 1226<br />
+                                Califórnia, Nova Iguaçu
+                            </p>
+                            <Button
+                                onClick={() => window.open("https://www.google.com/maps/search/Rua+Oscar+Soares+1226+Califórnia+Nova+Iguaçu", "_blank")}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                            >
+                                <MapPin className="w-4 h-4 mr-2" />
+                                Ver no Mapa
+                            </Button>
+                        </motion.div>
+
+                        {/* Store 3 */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
+                            viewport={{ once: true }}
+                            className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
+                        >
+                            <MapPin className="w-8 h-8 text-blue-600 mb-4" />
+                            <h3 className="text-2xl font-display font-bold text-gray-900 mb-2">
+                                JJ Parabrisas
+                            </h3>
+                            <p className="text-gray-700 mb-6 leading-relaxed">
+                                Avenida Nilo Peçanha 1058<br />
+                                Centro, Nova Iguaçu
+                            </p>
+                            <Button
+                                onClick={() => window.open("https://www.google.com/maps/search/Avenida+Nilo+Peçanha+1058+Centro+Nova+Iguaçu", "_blank")}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                            >
+                                <MapPin className="w-4 h-4 mr-2" />
+                                Ver no Mapa
+                            </Button>
+                        </motion.div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Clube do Vidro Section - Segunda posição */}
+            <section className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white">
+                <div className="max-w-6xl mx-auto">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                        viewport={{ once: true }}
+                        className="text-center mb-12"
+                    >
+                        <h2 className="text-4xl sm:text-5xl font-display font-black text-gray-900 mb-4">
+                            Clube do Vidro
+                        </h2>
+                        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                            Proteção completa para seu veículo com trocas anuais e suporte dedicado
                         </p>
                     </motion.div>
 
                     <motion.div
-                        variants={containerVariants}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.8 }}
+                        viewport={{ once: true }}
+                        className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-2xl p-8 sm:p-10 shadow-2xl"
+                    >
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                            <div className="flex flex-col justify-center">
+                                <h3 className="text-3xl font-display font-bold text-blue-700 mb-4">
+                                    Tranquilidade Garantida
+                                </h3>
+                                <p className="text-gray-700 mb-6 text-lg leading-relaxed">
+                                    Mantenha seu carro protegido com nosso plano anual de manutenção. 3 trocas de vidro, agendamento facilitado e suporte 24/7.
+                                </p>
+                                <div className="space-y-3 mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+                                        <span className="text-gray-700">3 trocas anuais incluídas</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+                                        <span className="text-gray-700">Agendamento online fácil</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+                                        <span className="text-gray-700">Suporte 24/7 dedicado</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+                                        <span className="text-gray-700">Garantia de qualidade</span>
+                                    </div>
+                                </div>
+                                <Button
+                                    onClick={() => navigate("/plan-auth")}
+                                    size="lg"
+                                    className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold w-full sm:w-auto"
+                                >
+                                    Conhecer o Plano <ArrowRight className="w-4 h-4 ml-2" />
+                                </Button>
+                            </div>
+
+                            <div className="flex flex-col justify-center items-center">
+                                <div className="bg-white rounded-2xl p-8 shadow-lg w-full">
+                                    <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-4">
+                                        Plano Anual
+                                    </p>
+                                    <div className="flex items-baseline gap-1 mb-2">
+                                        <span className="text-5xl font-display font-black text-blue-700">
+                                            R$ 239
+                                        </span>
+                                        <span className="text-lg text-blue-600">,00</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mb-6">
+                                        Renovação automática ao final do período
+                                    </p>
+                                    <div className="border-t border-gray-200 pt-6">
+                                        <p className="text-sm font-semibold text-gray-900 mb-4">Incluso no plano:</p>
+                                        <ul className="space-y-3">
+                                            <li className="flex items-center gap-2">
+                                                <Shield className="w-5 h-5 text-green-600 flex-shrink-0" />
+                                                <span className="text-gray-700">3 Trocas de Vidro</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                                                <span className="text-gray-700">Agendamento Facilitado</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <Clock className="w-5 h-5 text-orange-600 flex-shrink-0" />
+                                                <span className="text-gray-700">Suporte 24/7</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* Services Section */}
+            <section id="servicos" className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-blue-50">
+                <div className="max-w-6xl mx-auto">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                        viewport={{ once: true }}
+                        className="text-center mb-12 sm:mb-16"
+                    >
+                        <h2 className="text-4xl sm:text-5xl md:text-6xl font-display font-black text-gray-900 mb-4">
+                            Nossos Serviços
+                        </h2>
+                        <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+                            Tudo que seu veículo precisa em vidraçaria automotiva, com qualidade e rapidez
+                        </p>
+                    </motion.div>
+
+                    <motion.div
                         initial="hidden"
                         whileInView="visible"
+                        variants={containerVariants}
                         viewport={{ once: true }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                     >
                         {[
                             {
-                                icon: DollarSign,
-                                title: "Economia Garantida",
-                                description:
-                                    "No mercado custa R$ 800+ por vidro. Aqui você paga R$ 239 por ano, com 3 trocas.",
-                                color: "from-blue-500 to-blue-600",
-                                light: "bg-blue-50",
+                                title: "Parabrisas",
+                                description: "Troca e reparo de parabrisas com vidros de qualidade",
+                                icon: Sparkles,
                             },
                             {
-                                icon: Clock,
-                                title: "Agendamento Fácil",
-                                description:
-                                    "5 minutos no app. Escolha data, horário e local. Assistência em até 2 horas.",
-                                color: "from-blue-500 to-blue-600",
-                                light: "bg-blue-50",
-                            },
-                            {
+                                title: "Vigias",
+                                description: "Vidros laterais e traseiros com instalação profissional",
                                 icon: Shield,
-                                title: "Qualidade Comprovada",
-                                description:
-                                    "Apenas vidros homologados. Parcerias certificadas. Garantia de 12 meses.",
-                                color: "from-green-500 to-green-600",
-                                light: "bg-green-50",
                             },
                             {
-                                icon: Calendar,
-                                title: "3 Trocas Anuais",
-                                description:
-                                    "Renova todo 1º de janeiro. Use quando precisar: vidro dianteiro, traseiro ou lateral.",
-                                color: "from-purple-500 to-purple-600",
-                                light: "bg-purple-50",
+                                title: "Faróis",
+                                description: "Restauração e reparos de faróis e lanternas",
+                                icon: Zap,
                             },
                             {
-                                icon: Users,
-                                title: "Comunidade Confiável",
-                                description:
-                                    "Milhares de proprietários já confiam em nós. Acesso a dicas exclusivas.",
-                                color: "from-pink-500 to-pink-600",
-                                light: "bg-pink-50",
+                                title: "Vidros Especiais",
+                                description: "Vidros de portas, janelas e componentes diversos",
+                                icon: Hammer,
                             },
                             {
-                                icon: Award,
-                                title: "Suporte 24/7",
-                                description:
-                                    "Sempre disponível. Emergência na estrada? Nós atendemos. Sem demora.",
-                                color: "from-amber-500 to-amber-600",
-                                light: "bg-amber-50",
+                                title: "Som Automotivo e Acessórios",
+                                description: "Sistemas de som de qualidade e acessórios automotivos",
+                                icon: Zap,
                             },
-                        ].map((feature, index) => {
-                            const Icon = feature.icon;
+                            {
+                                title: "Insumos e Auto Peças",
+                                description: "Insumos e peças automotivas de qualidade",
+                                icon: Hammer,
+                            },
+                        ].map((service, index) => {
+                            const IconComponent = service.icon;
                             return (
                                 <motion.div
                                     key={index}
                                     variants={itemVariants}
-                                    whileHover={{ y: -5 }}
-                                    className={`${feature.light} border-2 border-gray-200 hover:border-blue-300 rounded-2xl p-6 sm:p-8 transition-all duration-300 cursor-pointer group`}
+                                    className="bg-white border-2 border-gray-200 hover:border-blue-300 rounded-xl p-6 sm:p-8 transition-all hover:shadow-lg"
                                 >
-                                    <motion.div
-                                        whileHover={{ scale: 1.1, rotate: 5 }}
-                                        className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 shadow-lg`}
-                                    >
-                                        <Icon className="w-7 h-7 text-white" />
-                                    </motion.div>
-                                    <h3 className="text-xl sm:text-2xl font-display font-bold text-gray-900 mb-3">
-                                        {feature.title}
+                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30">
+                                        <IconComponent className="w-6 h-6 text-white" />
+                                    </div>
+                                    <h3 className="text-xl font-display font-bold text-gray-900 mb-2">
+                                        {service.title}
                                     </h3>
-                                    <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
-                                        {feature.description}
+                                    <p className="text-gray-600 leading-relaxed">
+                                        {service.description}
                                     </p>
                                 </motion.div>
                             );
@@ -507,233 +652,117 @@ const Landing = () => {
                 </div>
             </section>
 
-            {/* Plan Details Section */}
+            {/* Why Choose Us */}
             <section className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white">
                 <div className="max-w-6xl mx-auto">
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                         viewport={{ once: true }}
                         className="text-center mb-12 sm:mb-16"
                     >
-                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black text-gray-900 mb-4">
-                            O Que está Incluído
+                        <h2 className="text-4xl sm:text-5xl font-display font-black text-gray-900 mb-4">
+                            Por Que Confiar em Nós
                         </h2>
-                        <p className="text-lg sm:text-xl text-gray-600">
-                            Um plano completo para sua tranquilidade
-                        </p>
                     </motion.div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                        {/* Left - Plan Features */}
-                        <motion.div
-                            initial={{ opacity: 0, x: -30 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.8 }}
-                            viewport={{ once: true }}
-                            className="space-y-4"
-                        >
-                            {[
-                                {
-                                    title: "3 Trocas de Vidro por Ano",
-                                    description:
-                                        "Use quando precisar. Vidro dianteiro, traseiro, lateral. Sem restrições.",
-                                },
-                                {
-                                    title: "Vidros 100% Homologados",
-                                    description:
-                                        "Todos os vidros são homologados com garantia de 12 meses contra defeitos.",
-                                },
-                                {
-                                    title: "Agendamento Rápido",
-                                    description:
-                                        "Agende pelo app em 5 minutos. Disponibilidade em 24-48 horas.",
-                                },
-                                {
-                                    title: "Assistência 24/7",
-                                    description:
-                                        "Emergência na estrada? Atendemos em até 2 horas para a maioria dos locais.",
-                                },
-                                {
-                                    title: "Renovação Automática",
-                                    description:
-                                        "Todo 1º de janeiro suas 3 trocas se renovam automaticamente.",
-                                },
-                                {
-                                    title: "Sem Carência",
-                                    description:
-                                        "Use seus serviços desde o primeiro mês. Sem espera.",
-                                },
-                                {
-                                    title: "Ambiente do Cliente",
-                                    description:
-                                        "Acompanhe seu plano em nosso app. Histórico de trocas. Próximas datas.",
-                                },
-                                {
-                                    title: "Suporte Especializado",
-                                    description:
-                                        "Dúvidas? Fale com nosso time. Email, telefone ou chat no app.",
-                                },
-                            ].map((item, index) => (
+                    <motion.div
+                        initial="hidden"
+                        whileInView="visible"
+                        variants={containerVariants}
+                        viewport={{ once: true }}
+                        className="grid grid-cols-1 sm:grid-cols-2 gap-8"
+                    >
+                        {[
+                            {
+                                icon: Award,
+                                title: "Experiência de 20 Anos",
+                                description: "Décadas de confiança e excelência em vidraçaria automotiva",
+                            },
+                            {
+                                icon: TrendingUp,
+                                title: "Qualidade Garantida",
+                                description: "Vidros originais e reparos com padrão de fábrica",
+                            },
+                            {
+                                icon: Clock,
+                                title: "Atendimento Rápido",
+                                description: "Serviço ágil sem comprometer a qualidade",
+                            },
+                            {
+                                icon: Users,
+                                title: "Equipe Profissional",
+                                description: "Técnicos experientes e certificados no ramo",
+                            },
+                        ].map((feature, index) => {
+                            const IconComponent = feature.icon;
+                            return (
                                 <motion.div
                                     key={index}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    whileInView={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: index * 0.05, duration: 0.6 }}
-                                    viewport={{ once: true }}
-                                    className="flex gap-4 items-start p-4 rounded-lg hover:bg-blue-50 transition-colors"
+                                    variants={itemVariants}
+                                    className="flex gap-6 items-start"
                                 >
-                                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-1">
-                                        <Check className="w-4 h-4 text-green-600" />
+                                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/30">
+                                        <IconComponent className="w-7 h-7 text-white" />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-gray-900">{item.title}</p>
-                                        <p className="text-gray-600 text-sm">{item.description}</p>
+                                        <h3 className="text-xl font-display font-bold text-gray-900 mb-2">
+                                            {feature.title}
+                                        </h3>
+                                        <p className="text-gray-600 leading-relaxed">
+                                            {feature.description}
+                                        </p>
                                     </div>
                                 </motion.div>
-                            ))}
-                        </motion.div>
-
-                        {/* Right - Pricing & CTA */}
-                        <motion.div
-                            initial={{ opacity: 0, x: 30 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.8 }}
-                            viewport={{ once: true }}
-                            className="flex flex-col"
-                        >
-                            <div className="bg-gradient-to-br from-blue-50 via-white to-blue-50 border-3 border-blue-300 rounded-3xl p-8 sm:p-12 shadow-2xl h-full flex flex-col justify-between">
-                                <div>
-                                    <h3 className="text-3xl sm:text-4xl font-display font-black text-gray-900 mb-2">
-                                        Seu Plano Anual
-                                    </h3>
-                                    <p className="text-gray-600 text-lg mb-8">
-                                        Investimento pequeno. Tranquilidade grande.
-                                    </p>
-
-                                    <div className="bg-white rounded-2xl p-6 mb-8 border-2 border-blue-200">
-                                        <p className="text-gray-600 text-sm mb-2">Valor Total (Renovação Automática)</p>
-                                        <p className="text-5xl sm:text-6xl font-display font-black text-blue-600 mb-2">
-                                            R$ {annualPrice.toFixed(2)}
-                                        </p>
-                                        <p className="text-gray-600 text-base">
-                                            Apenas
-                                            <strong className="text-blue-600 ml-1">
-                                                R$ {monthlyPrice.toFixed(2)}/mês
-                                            </strong>
-                                        </p>
-                                    </div>
-
-                                    <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg mb-8">
-                                        <p className="text-sm text-gray-700">
-                                            <strong className="text-yellow-700">💡 Dica:</strong> Assine agora e
-                                            economize em comparação a tratar vidros quebrados. Normalmente custa
-                                            R$ 800+ por troca.
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-3 mb-8">
-                                        <div className="flex items-center gap-3 text-gray-700">
-                                            <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                            <span><span className="text-lg font-bold text-blue-600">3</span> trocas incluídas por ano</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-gray-700">
-                                            <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                            <span>Sem taxa de adesão</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-gray-700">
-                                            <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                            <span>Sem multa para cancelar</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-gray-700">
-                                            <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                            <span>Cancelamento a qualquer momento</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <Button
-                                    onClick={() => navigate("/plan-auth")}
-                                    size="lg"
-                                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-lg px-8 py-6 rounded-xl shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 transition-all"
-                                >
-                                    Assinar Plano Anual <ArrowRight className="w-5 h-5 ml-2" />
-                                </Button>
-                            </div>
-                        </motion.div>
-                    </div>
+                            );
+                        })}
+                    </motion.div>
                 </div>
             </section>
 
             {/* FAQ Section */}
-            <section
-                id="faq"
-                className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-gray-50"
-            >
+            <section id="faq" className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-blue-50">
                 <div className="max-w-4xl mx-auto">
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                         viewport={{ once: true }}
                         className="text-center mb-12 sm:mb-16"
                     >
-                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black text-gray-900 mb-4">
-                            Dúvidas Frequentes
+                        <h2 className="text-4xl sm:text-5xl font-display font-black text-gray-900 mb-4">
+                            Perguntas Frequentes
                         </h2>
-                        <p className="text-lg text-gray-600">
-                            Respostas rápidas para suas perguntas
-                        </p>
                     </motion.div>
 
                     <motion.div
-                        variants={containerVariants}
                         initial="hidden"
                         whileInView="visible"
+                        variants={containerVariants}
                         viewport={{ once: true }}
-                        className="space-y-4"
+                        className="space-y-4 sm:space-y-6"
                     >
                         {[
                             {
-                                question: "Como funciona o agendamento?",
+                                question: "Qual o tempo de atendimento?",
                                 answer:
-                                    "Você agenda pelo nosso app em 5 minutos. Escolhe data, horário e local de preferência. Em emergências, atendemos em até 2 horas. Para agendamentos normais, temos slots em 24-48 horas.",
-                            },
-                            {
-                                question: "Posso usar as 3 trocas para qualquer tipo de vidro?",
-                                answer:
-                                    "Sim! Você pode usar para vidro dianteiro, traseiro, lateral ou qualquer combinação. O importante é manter seu carro seguro.",
-                            },
-                            {
-                                question: "O que acontece se não usar as 3 trocas no ano?",
-                                answer:
-                                    "As trocas se renovam todo 1º de janeiro. Se sobrar, elas expiram. Mas com nosso serviço, você usa com tranquilidade.",
-                            },
-                            {
-                                question: "Quanto tempo dura a instalação?",
-                                answer:
-                                    "Normalmente entre 30 minutos a 2 horas, dependendo do tipo de vidro. Nossos profissionais trabalham com agilidade e precisão.",
+                                    "Você escolhe. Pode vir até nós ou agendar um atendimento no local do seu veículo. Geralmente concluímos em 1-2 horas.",
                             },
                             {
                                 question: "Os vidros têm garantia?",
                                 answer:
-                                    "Todos os vidros instalados têm garantia de 12 meses contra defeitos de fabricação e instalação. Sua segurança é nossa prioridade.",
+                                    "Sim! Todos os vidros instalados têm garantia de 12 meses contra defeitos de fabricação e instalação.",
                             },
                             {
-                                question: "Posso cancelar quando quiser?",
+                                question: "Qual é o valor dos serviços?",
                                 answer:
-                                    "Sim, totalmente. Sem multa, sem taxa de cancelamento. Basta avisar e sua assinatura para no mês seguinte.",
+                                    "Os preços variam conforme o serviço e modelo do veículo. Entre em contato para um orçamento personalizado sem compromisso.",
                             },
                             {
-                                question: "Preciso descer do carro para o serviço?",
+                                question: "Vocês atendem em domicílio?",
                                 answer:
-                                    "Você escolhe. Pode agendar em casa e nós vamos até você, ou ir a uma de nossas filiais. Você no controle.",
-                            },
-                            {
-                                question: "Como funciona a renovação automática?",
-                                answer:
-                                    "No dia de renovação (1º de janeiro), a cobrança é automática no método de pagamento registrado. Suas 3 trocas se renovam e você continua protegido.",
+                                    "Sim, para a maioria dos serviços fazemos atendimento em domicílio. Consulte-nos sobre disponibilidade.",
                             },
                         ].map((faq, index) => (
                             <motion.div
@@ -761,10 +790,10 @@ const Landing = () => {
                     >
                         <Heart className="w-8 h-8 text-blue-600 mx-auto mb-4" />
                         <h3 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 mb-3">
-                            Não encontrou sua resposta?
+                            Ainda tem dúvidas?
                         </h3>
                         <p className="text-gray-600 text-lg mb-6">
-                            Nosso time está pronto para ajudar. Entre em contato!
+                            Nossa equipe está pronta para ajudar. Fale conosco!
                         </p>
                         <Button
                             onClick={() => navigate("/ajuda")}
@@ -796,7 +825,7 @@ const Landing = () => {
                             viewport={{ once: true }}
                             className="text-4xl sm:text-5xl md:text-6xl font-display font-black text-white mb-4 sm:mb-6"
                         >
-                            Proteja Seu Carro Hoje
+                            Seu Vidro em Boas Mãos
                         </motion.h2>
 
                         <motion.p
@@ -806,8 +835,7 @@ const Landing = () => {
                             viewport={{ once: true }}
                             className="text-xl sm:text-2xl text-white/95 mb-6 sm:mb-8"
                         >
-                            Por apenas <strong>R$ {monthlyPrice.toFixed(2)}/mês</strong> (R${" "}
-                            {annualPrice.toFixed(2)}/ano), tenha 3 trocas de vidro + suporte 24/7
+                            Mais de 20 anos cuidando da segurança e visibilidade do seu veículo
                         </motion.p>
 
                         <motion.p
@@ -817,46 +845,11 @@ const Landing = () => {
                             viewport={{ once: true }}
                             className="text-lg sm:text-xl text-white/90 mb-8 sm:mb-10"
                         >
-                            ✨ Sem taxa de adesão • Cancelamento sem multa • Começe hoje
+                            ✨ Qualidade garantida • Atendimento rápido • Profissionais certificados
                         </motion.p>
 
-                        <motion.form
-                            initial={{ opacity: 0, y: 10 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.5, duration: 0.8 }}
-                            viewport={{ once: true }}
-                            onSubmit={handleSubscribe}
-                            className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-8"
-                        >
-                            <Input
-                                type="email"
-                                placeholder="seu@email.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="bg-white/20 border-white/30 text-white placeholder:text-white/70 text-base"
-                                required
-                            />
-                            <Button
-                                type="submit"
-                                size="lg"
-                                className="bg-white text-blue-600 hover:bg-white/90 font-bold whitespace-nowrap"
-                            >
-                                {submitted ? "Redirecionando..." : "Assinar Agora"}
-                            </Button>
-                        </motion.form>
-
-                        {submitted && (
-                            <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-sm text-white/80"
-                            >
-                                Bem-vindo! Você será redirecionado em instantes...
-                            </motion.p>
-                        )}
-
                         <p className="text-xs sm:text-sm text-white/70 mt-6">
-                            ✓ Cadastro rápido • ✓ Aprovação instantânea • ✓ Comece hoje mesmo
+                            ✓ Orçamento personalizado • ✓ Agendamento facilitado • ✓ Comece hoje
                         </p>
                     </div>
                 </motion.div>
@@ -869,37 +862,41 @@ const Landing = () => {
                         {/* Brand */}
                         <div>
                             <h3 className="font-display font-bold text-gray-900 mb-4 text-lg">
-                                Clube do Vidro
+                                Iguaçu Auto Vidros
                             </h3>
                             <p className="text-sm text-gray-600 leading-relaxed">
-                                Plano de manutenção pela Iguaçu Auto Vidros. Proteção e tranquilidade para seu
-                                carro, mês a mês.
+                                Especialistas em vidraçaria automotiva com mais de 20 anos de excelência e confiabilidade.
                             </p>
                         </div>
 
-                        {/* Product */}
+                        {/* Services */}
                         <div>
-                            <h4 className="font-semibold text-gray-900 mb-4 text-base">Produto</h4>
+                            <h4 className="font-semibold text-gray-900 mb-4 text-base">Serviços</h4>
                             <ul className="space-y-3 text-sm text-gray-600">
                                 <li>
-                                    <a href="#" className="hover:text-blue-600 transition font-medium">
-                                        Plano Completo
+                                    <a href="#servicos" className="hover:text-blue-600 transition font-medium">
+                                        Parabrisas
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="#benefits" className="hover:text-blue-600 transition font-medium">
-                                        Benefícios
+                                    <a href="#servicos" className="hover:text-blue-600 transition font-medium">
+                                        Vigias
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="#faq" className="hover:text-blue-600 transition font-medium">
-                                        FAQ
+                                    <a href="#servicos" className="hover:text-blue-600 transition font-medium">
+                                        Faróis
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#servicos" className="hover:text-blue-600 transition font-medium">
+                                        Vidros Especiais
                                     </a>
                                 </li>
                             </ul>
                         </div>
 
-                        {/* Company */}
+                        {/* Legal */}
                         <div>
                             <h4 className="font-semibold text-gray-900 mb-4 text-base">Legal</h4>
                             <ul className="space-y-3 text-sm text-gray-600">
@@ -914,6 +911,11 @@ const Landing = () => {
                                     </a>
                                 </li>
                                 <li>
+                                    <a href="#faq" className="hover:text-blue-600 transition font-medium">
+                                        FAQ
+                                    </a>
+                                </li>
+                                <li>
                                     <a href="#" className="hover:text-blue-600 transition font-medium">
                                         Contato
                                     </a>
@@ -921,42 +923,18 @@ const Landing = () => {
                             </ul>
                         </div>
 
-                        {/* Support */}
-                        <div>
-                            <h4 className="font-semibold text-gray-900 mb-4 text-base">Suporte</h4>
-                            <ul className="space-y-3 text-sm">
-                                <li>
-                                    <a
-                                        href="mailto:contato@clubedovidro.com"
-                                        className="text-gray-600 hover:text-blue-600 transition font-medium"
-                                    >
-                                        contato@clubedovidro.com
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        href="tel:1133334444"
-                                        className="text-gray-600 hover:text-blue-600 transition font-medium"
-                                    >
-                                        (11) 3333-4444
-                                    </a>
-                                </li>
-                                <li className="text-gray-600">
-                                    Seg-Sex • 8h às 20h
-                                </li>
-                            </ul>
-                        </div>
                     </div>
 
                     {/* Bottom */}
                     <div className="border-t border-gray-200 pt-8 sm:pt-12">
                         <p className="text-center text-sm text-gray-600 mb-2">
-                            © 2024 Clube do Vidro • Plano de Manutenção da Iguaçu Auto Vidros. Todos os direitos
-                            reservados.
+                            © 2024 Iguaçu Auto Vidros. Todos os direitos reservados.
+                        </p>
+                        <p className="text-center text-xs text-gray-500 mb-3">
+                            Qualidade, segurança e confiabilidade há mais de 20 anos
                         </p>
                         <p className="text-center text-xs text-gray-500">
-                            Desenvolvido com ❤️ para cuidadores de carros • Segurança e tranquilidade em primeiro
-                            lugar
+                            Desenvolvido por <a href="https://www.technexos.com.br" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 font-semibold">TechNexos</a>
                         </p>
                     </div>
                 </div>
