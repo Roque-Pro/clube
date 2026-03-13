@@ -44,6 +44,10 @@ interface Appointment {
      vehicle_id?: string;
      vehicle?: string;
      plate?: string;
+     original_scheduled_date?: string;
+     original_scheduled_time?: string;
+     time_changed_at?: string;
+     time_change_reason?: string;
 }
 
 const Servicos = () => {
@@ -62,6 +66,13 @@ const Servicos = () => {
     const [completeAppointmentDialogOpen, setCompleteAppointmentDialogOpen] = useState(false);
     const [selectedEmployeeForCompletion, setSelectedEmployeeForCompletion] = useState("");
     const [appointmentToComplete, setAppointmentToComplete] = useState<Appointment | null>(null);
+    const [editAppointmentDialogOpen, setEditAppointmentDialogOpen] = useState(false);
+    const [appointmentToEdit, setAppointmentToEdit] = useState<Appointment | null>(null);
+    const [editAppointmentForm, setEditAppointmentForm] = useState({
+        scheduled_date: "",
+        scheduled_time: "",
+        reason: "",
+    });
     const { toast } = useToast();
 
     const [serviceForm, setServiceForm] = useState({
@@ -239,20 +250,97 @@ const Servicos = () => {
             logAction("register", "replacements", appointmentId, appointment.client_name, `Agendamento concluído e troca registrada: ${appointment.service_type}${vehicleInfoComplete} - Responsável: ${selectedEmployee?.name}`);
 
             setCompleteAppointmentDialogOpen(false);
-            fetchData();
-            toast({ title: "Serviço concluído e registrado com sucesso!" });
-        } catch (err: any) {
-            toast({
-                title: "Erro ao concluir agendamento",
-                description: err.message,
-                variant: "destructive",
-            });
-        } finally {
-            setActioningAppointmentId(null);
-        }
-    };
+             fetchData();
+             toast({ title: "Serviço concluído e registrado com sucesso!" });
+            } catch (err: any) {
+             toast({
+                 title: "Erro ao concluir agendamento",
+                 description: err.message,
+                 variant: "destructive",
+             });
+            } finally {
+             setActioningAppointmentId(null);
+            }
+            };
 
-    const handleAddService = async () => {
+            const openEditAppointmentDialog = (appointment: Appointment) => {
+            // Garantir formato correto da data (YYYY-MM-DD)
+            const dateStr = typeof appointment.scheduled_date === 'string' 
+                ? appointment.scheduled_date.split('T')[0] 
+                : appointment.scheduled_date;
+            
+            setAppointmentToEdit(appointment);
+            setEditAppointmentForm({
+             scheduled_date: dateStr,
+             scheduled_time: appointment.scheduled_time,
+             reason: "",
+            });
+            setEditAppointmentDialogOpen(true);
+            };
+
+            const handleEditAppointment = async () => {
+            if (!appointmentToEdit || !editAppointmentForm.scheduled_date || !editAppointmentForm.scheduled_time) {
+             toast({ title: "Preencha data e hora", variant: "destructive" });
+             return;
+            }
+
+            setActioningAppointmentId(appointmentToEdit.id);
+            try {
+             // Corrigir timezone: adicionar 1 dia à data
+             const dateObj = new Date(editAppointmentForm.scheduled_date);
+             dateObj.setDate(dateObj.getDate() + 1);
+             const newDate = dateObj.toISOString().split('T')[0];
+             
+             console.log("📅 ANTES DE ENVIAR:");
+             console.log("Input date do formulário:", editAppointmentForm.scheduled_date);
+             console.log("Data corrigida com timezone:", newDate);
+             
+             // Se a data/hora mudou, atualizar com rastreamento
+             const dateChanged = newDate !== appointmentToEdit.scheduled_date;
+             const timeChanged = editAppointmentForm.scheduled_time !== appointmentToEdit.scheduled_time;
+
+             if (dateChanged || timeChanged) {
+                 console.log("📤 ENVIANDO PARA SUPABASE:");
+                 console.log("scheduled_date CORRIGIDA:", newDate);
+                 console.log("scheduled_time:", editAppointmentForm.scheduled_time);
+                 
+                 const { error } = await supabase
+                     .from("appointments")
+                     .update({
+                         scheduled_date: newDate,
+                         scheduled_time: editAppointmentForm.scheduled_time,
+                         original_scheduled_date: appointmentToEdit.original_scheduled_date || appointmentToEdit.scheduled_date,
+                         original_scheduled_time: appointmentToEdit.original_scheduled_time || appointmentToEdit.scheduled_time,
+                         time_changed_at: new Date().toISOString(),
+                         time_change_reason: editAppointmentForm.reason || "Mudança de disponibilidade",
+                     })
+                     .eq("id", appointmentToEdit.id);
+
+                 if (error) throw error;
+
+                 // Log da ação
+                 const oldTime = `${appointmentToEdit.scheduled_date} ${appointmentToEdit.scheduled_time}`;
+                 const newTime = `${newDate} ${editAppointmentForm.scheduled_time}`;
+                 logAction("update", "appointments", appointmentToEdit.id, appointmentToEdit.client_name, `Horário alterado de ${oldTime} para ${newTime}. Motivo: ${editAppointmentForm.reason || "Não informado"}`);
+
+                 setEditAppointmentDialogOpen(false);
+                 fetchData();
+                 toast({ title: "Horário do agendamento alterado com sucesso!" });
+             } else {
+                 toast({ title: "Nenhuma alteração foi feita", variant: "destructive" });
+             }
+            } catch (err: any) {
+             toast({
+                 title: "Erro ao alterar agendamento",
+                 description: err.message,
+                 variant: "destructive",
+             });
+            } finally {
+             setActioningAppointmentId(null);
+            }
+            };
+
+            const handleAddService = async () => {
         if (!serviceForm.serviceType || !serviceForm.employeeId) {
             toast({ title: "Preencha os campos obrigatórios", variant: "destructive" });
             return;
@@ -515,31 +603,45 @@ const Servicos = () => {
                                                              </p>
                                                          </div>
                                                         <div className="flex flex-col gap-1 flex-shrink-0">
-                                                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${apt.status === "pendente" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}>
-                                                                {apt.status === "pendente" ? "⏳ Pendente" : "⏱️ Confirmado"}
-                                                            </span>
-                                                            {apt.status === "pendente" && (
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    className="text-xs h-7"
-                                                                    onClick={() => handleConfirmAppointment(apt.id, apt)}
-                                                                    disabled={actioningAppointmentId === apt.id}
-                                                                >
-                                                                    <Check className="w-3 h-3" /> Confirmar
-                                                                </Button>
-                                                            )}
-                                                            {apt.status === "confirmado" && (
-                                                                <Button
-                                                                    size="sm"
-                                                                    className="text-xs h-7 bg-success hover:bg-success/90"
-                                                                    onClick={() => openCompleteAppointmentDialog(apt)}
-                                                                    disabled={actioningAppointmentId === apt.id}
-                                                                >
-                                                                    <CheckCircle className="w-3 h-3" /> Concluir
-                                                                </Button>
-                                                            )}
-                                                        </div>
+                                                             <span className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${apt.status === "pendente" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}>
+                                                                 {apt.status === "pendente" ? "⏳ Pendente" : "⏱️ Confirmado"}
+                                                             </span>
+                                                             {apt.time_changed_at && (
+                                                                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap bg-orange-100 text-orange-700">
+                                                                     🔔 Horário Alterado
+                                                                 </span>
+                                                             )}
+                                                             <Button
+                                                                 size="sm"
+                                                                 variant="outline"
+                                                                 className="text-xs h-7"
+                                                                 onClick={() => openEditAppointmentDialog(apt)}
+                                                                 disabled={actioningAppointmentId === apt.id}
+                                                             >
+                                                                 ✏️ Alterar Horário
+                                                             </Button>
+                                                             {apt.status === "pendente" && (
+                                                                 <Button
+                                                                     size="sm"
+                                                                     variant="outline"
+                                                                     className="text-xs h-7"
+                                                                     onClick={() => handleConfirmAppointment(apt.id, apt)}
+                                                                     disabled={actioningAppointmentId === apt.id}
+                                                                 >
+                                                                     <Check className="w-3 h-3" /> Confirmar
+                                                                 </Button>
+                                                             )}
+                                                             {apt.status === "confirmado" && (
+                                                                 <Button
+                                                                     size="sm"
+                                                                     className="text-xs h-7 bg-success hover:bg-success/90"
+                                                                     onClick={() => openCompleteAppointmentDialog(apt)}
+                                                                     disabled={actioningAppointmentId === apt.id}
+                                                                 >
+                                                                     <CheckCircle className="w-3 h-3" /> Concluir
+                                                                 </Button>
+                                                             )}
+                                                         </div>
                                                     </div>
                                                 </div>
                                             );
@@ -729,42 +831,94 @@ const Servicos = () => {
                         </motion.div>
 
                         {/* Dialog para Concluir Agendamento */}
-                        <Dialog open={completeAppointmentDialogOpen} onOpenChange={setCompleteAppointmentDialogOpen}>
-                            <DialogContent className="bg-card border-border">
-                                <DialogHeader>
-                                    <DialogTitle className="font-display">Concluir Agendamento</DialogTitle>
-                                </DialogHeader>
-                                {appointmentToComplete && (
-                                    <div className="space-y-4">
-                                        <div className="p-3 bg-muted/50 rounded-lg">
-                                            <p className="text-sm text-muted-foreground mb-1">Cliente</p>
-                                            <p className="font-semibold text-foreground">{appointmentToComplete.client_name}</p>
-                                            <p className="text-sm text-muted-foreground mt-2">Serviço: {appointmentToComplete.service_type}</p>
-                                        </div>
-                                        <div>
-                                            <Label>Funcionário Responsável *</Label>
-                                            <Select value={selectedEmployeeForCompletion} onValueChange={setSelectedEmployeeForCompletion}>
-                                                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                                <SelectContent>
-                                                    {employees.map((emp) => (
-                                                        <SelectItem key={emp.id} value={emp.id}>
-                                                            {emp.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <Button
-                                            onClick={handleCompleteAppointment}
-                                            disabled={actioningAppointmentId !== null}
-                                            className="w-full gradient-primary text-primary-foreground font-semibold"
-                                        >
-                                            {actioningAppointmentId ? "Processando..." : "Concluir Serviço"}
-                                        </Button>
-                                    </div>
-                                )}
-                            </DialogContent>
-                        </Dialog>
+                         <Dialog open={completeAppointmentDialogOpen} onOpenChange={setCompleteAppointmentDialogOpen}>
+                             <DialogContent className="bg-card border-border">
+                                 <DialogHeader>
+                                     <DialogTitle className="font-display">Concluir Agendamento</DialogTitle>
+                                 </DialogHeader>
+                                 {appointmentToComplete && (
+                                     <div className="space-y-4">
+                                         <div className="p-3 bg-muted/50 rounded-lg">
+                                             <p className="text-sm text-muted-foreground mb-1">Cliente</p>
+                                             <p className="font-semibold text-foreground">{appointmentToComplete.client_name}</p>
+                                             <p className="text-sm text-muted-foreground mt-2">Serviço: {appointmentToComplete.service_type}</p>
+                                         </div>
+                                         <div>
+                                             <Label>Funcionário Responsável *</Label>
+                                             <Select value={selectedEmployeeForCompletion} onValueChange={setSelectedEmployeeForCompletion}>
+                                                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                                 <SelectContent>
+                                                     {employees.map((emp) => (
+                                                         <SelectItem key={emp.id} value={emp.id}>
+                                                             {emp.name}
+                                                         </SelectItem>
+                                                     ))}
+                                                 </SelectContent>
+                                             </Select>
+                                         </div>
+                                         <Button
+                                             onClick={handleCompleteAppointment}
+                                             disabled={actioningAppointmentId !== null}
+                                             className="w-full gradient-primary text-primary-foreground font-semibold"
+                                         >
+                                             {actioningAppointmentId ? "Processando..." : "Concluir Serviço"}
+                                         </Button>
+                                     </div>
+                                 )}
+                             </DialogContent>
+                         </Dialog>
+
+                         {/* Dialog para Editar Horário de Agendamento */}
+                         <Dialog open={editAppointmentDialogOpen} onOpenChange={setEditAppointmentDialogOpen}>
+                             <DialogContent className="bg-card border-border">
+                                 <DialogHeader>
+                                     <DialogTitle className="font-display">Alterar Horário do Agendamento</DialogTitle>
+                                 </DialogHeader>
+                                 {appointmentToEdit && (
+                                     <div className="space-y-4">
+                                         <div className="p-3 bg-muted/50 rounded-lg">
+                                             <p className="text-sm text-muted-foreground mb-1">Cliente</p>
+                                             <p className="font-semibold text-foreground">{appointmentToEdit.client_name}</p>
+                                             <p className="text-sm text-muted-foreground mt-2">Serviço: {appointmentToEdit.service_type}</p>
+                                             <p className="text-xs text-muted-foreground mt-1">
+                                                 Horário anterior: {appointmentToEdit.scheduled_date} às {appointmentToEdit.scheduled_time}
+                                             </p>
+                                         </div>
+                                         <div>
+                                             <Label>Nova Data *</Label>
+                                             <Input
+                                                 type="date"
+                                                 value={editAppointmentForm.scheduled_date}
+                                                 onChange={(e) => setEditAppointmentForm({ ...editAppointmentForm, scheduled_date: e.target.value })}
+                                             />
+                                         </div>
+                                         <div>
+                                             <Label>Novo Horário *</Label>
+                                             <Input
+                                                 type="time"
+                                                 value={editAppointmentForm.scheduled_time}
+                                                 onChange={(e) => setEditAppointmentForm({ ...editAppointmentForm, scheduled_time: e.target.value })}
+                                             />
+                                         </div>
+                                         <div>
+                                             <Label>Motivo da Alteração</Label>
+                                             <Input
+                                                 placeholder="Ex: Indisponibilidade do técnico, cliente solicitou..."
+                                                 value={editAppointmentForm.reason}
+                                                 onChange={(e) => setEditAppointmentForm({ ...editAppointmentForm, reason: e.target.value })}
+                                             />
+                                         </div>
+                                         <Button
+                                             onClick={handleEditAppointment}
+                                             disabled={actioningAppointmentId !== null}
+                                             className="w-full gradient-primary text-primary-foreground font-semibold"
+                                         >
+                                             {actioningAppointmentId ? "Processando..." : "Confirmar Alteração"}
+                                         </Button>
+                                     </div>
+                                 )}
+                             </DialogContent>
+                         </Dialog>
 
                         {/* Top 3 de Hoje */}
                         <motion.div

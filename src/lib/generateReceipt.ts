@@ -45,64 +45,143 @@ const loadImageAsBase64 = async (url: string): Promise<string> => {
   });
 };
 
+// Função auxiliar para calcular a altura necessária do documento
+const calculateRequiredHeight = (data: ReceiptData): number => {
+  let yPosition = 5;
+
+  // Logo
+  yPosition += 26;
+
+  // Nome da loja
+  const storeNameLines = data.storeName.split('\n');
+  yPosition += storeNameLines.length * 4 + 1;
+
+  // Separador e frase evangélica
+  yPosition += 3; // separador
+  yPosition += 3; // frase 1
+  yPosition += 3; // frase 2
+
+  // Título e separador
+  yPosition += 3; // RECIBO
+  yPosition += 3; // separador
+
+  // Dados da venda
+  yPosition += 4; // Data
+  yPosition += 4; // ID
+
+  // Produtos
+  yPosition += 3; // "PRODUTOS"
+  yPosition += 2; // linha separação
+  
+  data.products.forEach((product) => {
+    // Nome do produto
+    const estimatedLines = Math.ceil(product.name.length / 30); // aproximadamente 30 caracteres por linha em 80mm
+    yPosition += estimatedLines * 3 + 1;
+    yPosition += 3; // Qtd e preço
+    yPosition += 3; // Subtotal
+  });
+
+  // Resumo financeiro
+  yPosition += 2;
+  yPosition += 12; // Box com total
+
+  // Garantia se aplicável
+  if (data.isGlassWarranty) {
+    yPosition += 1;
+    yPosition += 18; // Box de garantia
+    yPosition += 12; // Exclusões
+  }
+
+  // Método de pagamento
+  yPosition += 1;
+  yPosition += 3; // "PAGAMENTO"
+  yPosition += 5; // método
+
+  // Observações
+  if (data.notes) {
+    yPosition += 3; // "OBS"
+    const estimatedNoteLines = Math.ceil(data.notes.length / 35);
+    yPosition += estimatedNoteLines * 2.5 + 2;
+  }
+
+  // Rodapé
+  yPosition += 2;
+  yPosition += 2;
+  yPosition += 2; // "Obrigado!"
+  yPosition += 2; // Data
+
+  // Adicionar margem final
+  yPosition += 5;
+
+  return yPosition;
+};
+
 export const generateReceipt = async (data: ReceiptData): Promise<Blob> => {
+  // Calcular altura necessária
+  const requiredHeight = calculateRequiredHeight(data);
+
+  // Formato: Bobina térmica 80mm com altura dinâmica
   const pdf = new jsPDF({
     orientation: "portrait",
     unit: "mm",
-    format: "a4",
+    format: [80, requiredHeight], // 80mm de largura, altura calculada dinamicamente
   });
 
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  let yPosition = 10;
+  let yPosition = 5;
 
-  // Configurações de fonte
-  const headerFont = 16;
-  const titleFont = 14;
-  const normalFont = 10;
-  const smallFont = 8;
+  // Configurações de fonte (reduzidas para caber em 80mm)
+  const headerFont = 11;
+  const titleFont = 10;
+  const normalFont = 8;
+  const smallFont = 7;
 
   // Cor primária
   const primaryColor = [31, 41, 55]; // #1f2937
 
   // ============ CABEÇALHO COM LOGO ============
   
-  // Logo centralizada no topo (comprimida)
+  // Logo centralizada no topo (bem menor para 80mm)
   try {
     const logoBase64 = await loadImageAsBase64(new URL("../img/iguacu_vidros_black.PNG", import.meta.url).href);
-    // Usa JPEG com qualidade reduzida para reduzir tamanho
-    pdf.addImage(logoBase64, "JPEG", pageWidth / 2 - 24, yPosition, 48, 42, undefined, "MEDIUM");
-    yPosition += 50;
+    // Logo reduzida para 80mm
+    pdf.addImage(logoBase64, "JPEG", pageWidth / 2 - 14, yPosition, 28, 24, undefined, "MEDIUM");
+    yPosition += 26;
   } catch (err) {
     console.warn("Erro ao carregar logo:", err);
-    yPosition += 10;
+    yPosition += 5;
   }
 
-  // Nome da loja (centralizado, com suporte a quebras de linha)
+  // Nome da loja (centralizado, compacto)
   pdf.setFontSize(headerFont);
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(...primaryColor);
   const storeNameLines = data.storeName.split('\n');
   let storeNameY = yPosition;
   storeNameLines.forEach((line) => {
-    pdf.text(line, pageWidth / 2, storeNameY, { align: "center" });
-    storeNameY += 6;
+    pdf.text(line, pageWidth / 2, storeNameY, { align: "center", maxWidth: 70 });
+    storeNameY += 4;
   });
-  yPosition = storeNameY + 2;
+  yPosition = storeNameY + 1;
 
   // Separador
   pdf.setDrawColor(...primaryColor);
-  pdf.line(15, yPosition, pageWidth - 15, yPosition);
-  yPosition += 5;
+  pdf.line(3, yPosition, pageWidth - 3, yPosition);
+  yPosition += 3;
 
-  // Frase evangélica
+  // Frase evangélica (reduzida)
   pdf.setFont("helvetica", "italic");
-  pdf.setFontSize(9);
+  pdf.setFontSize(smallFont);
   pdf.setTextColor(100, 100, 100);
-  pdf.text('"A mão do Senhor fez todas essas coisas"', pageWidth / 2, yPosition, {
+  pdf.text('"A mão do Senhor"', pageWidth / 2, yPosition, {
     align: "center",
   });
-  yPosition += 8;
+  yPosition += 3;
+  pdf.text('"fez todas essas coisas"', pageWidth / 2, yPosition, {
+    align: "center",
+  });
+  yPosition += 3;
 
   // ============ INFORMAÇÕES DA VENDA ============
 
@@ -110,20 +189,20 @@ export const generateReceipt = async (data: ReceiptData): Promise<Blob> => {
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(...primaryColor);
   pdf.text("RECIBO DE VENDA", pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 8;
+  yPosition += 3;
 
   // Separador
   pdf.setDrawColor(...primaryColor);
-  pdf.line(15, yPosition, pageWidth - 15, yPosition);
-  yPosition += 5;
+  pdf.line(3, yPosition, pageWidth - 3, yPosition);
+  yPosition += 3;
 
-  // Dados da venda
+  // Dados da venda (compacto)
   pdf.setFontSize(normalFont);
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(0, 0, 0);
 
-  const dataX = 20;
-  const dataWidth = pageWidth - 40;
+  const dataX = 4;
+  const dataWidth = pageWidth - 8;
 
   // Data - Converte para timezone de São Paulo/Paraná (America/Sao_Paulo)
   const saleDate = new Date(data.saleDate);
@@ -137,153 +216,164 @@ export const generateReceipt = async (data: ReceiptData): Promise<Blob> => {
     timeZone: "America/Sao_Paulo"
   }).format(saleDate);
   pdf.text(`Data: ${dataFormatted}`, dataX, yPosition);
-  yPosition += 6;
+  yPosition += 4;
 
-  // ID da venda
-  pdf.text(`ID da Venda: ${data.saleId}`, dataX, yPosition);
-  yPosition += 10;
+  // ID da venda (reduzido)
+  pdf.setFontSize(smallFont);
+  pdf.text(`ID: ${data.saleId}`, dataX, yPosition);
+  yPosition += 4;
 
   // ============ DETALHES DOS PRODUTOS ============
 
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(normalFont);
   pdf.setTextColor(...primaryColor);
-  pdf.text("Descrição dos Produtos", dataX, yPosition);
-  yPosition += 6;
+  pdf.text("PRODUTOS", dataX, yPosition);
+  yPosition += 3;
 
   // Linha de separação
   pdf.setDrawColor(200, 200, 200);
   pdf.line(dataX, yPosition, pageWidth - dataX, yPosition);
-  yPosition += 4;
+  yPosition += 2;
 
-  // Lista de produtos
+  // Lista de produtos (compacta)
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(smallFont);
   
   data.products.forEach((product, index) => {
-    // Produto
-    const productLines = pdf.splitTextToSize(`${index + 1}. ${product.name}`, dataWidth);
-    pdf.text(productLines, dataX, yPosition);
-    yPosition += productLines.length * 4 + 2;
+    // Produto (sem número, mais compacto)
+    const productLines = pdf.splitTextToSize(product.name, dataWidth - 1);
+    pdf.text(productLines, dataX + 1, yPosition);
+    yPosition += productLines.length * 3 + 1;
 
-    // Quantidade e preço
-    pdf.setFontSize(normalFont - 1);
-    pdf.text(`   Quantidade: ${product.quantity} un. | Unitário: R$ ${product.unitPrice.toFixed(2)}`, dataX, yPosition);
-    yPosition += 5;
-    pdf.text(`   Subtotal: R$ ${product.subtotal.toFixed(2)}`, dataX, yPosition);
-    yPosition += 7;
-    pdf.setFontSize(normalFont);
+    // Quantidade e preço em uma linha compacta
+    const qtyPrice = `Qtd: ${product.quantity} | R$ ${product.unitPrice.toFixed(2)}`;
+    pdf.text(qtyPrice, dataX + 1, yPosition);
+    yPosition += 3;
+    
+    // Subtotal
+    pdf.setFont("helvetica", "bold");
+    pdf.text(`Total: R$ ${product.subtotal.toFixed(2)}`, dataX + 1, yPosition);
+    pdf.setFont("helvetica", "normal");
+    yPosition += 3;
   });
 
   // ============ RESUMO FINANCEIRO ============
 
+  yPosition += 2;
+
   // Fundo cinzento para destaque
   pdf.setFillColor(240, 240, 240);
-  pdf.rect(dataX, yPosition, dataWidth, 20, "F");
+  pdf.rect(dataX, yPosition, dataWidth, 10, "F");
 
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(normalFont);
   pdf.setTextColor(...primaryColor);
 
-  pdf.text("TOTAL", dataX + 5, yPosition + 6);
-  pdf.setFontSize(18);
-  pdf.text(`R$ ${data.totalAmount.toFixed(2)}`, pageWidth - dataX - 5, yPosition + 6, {
+  pdf.text("TOTAL", dataX + 2, yPosition + 6);
+  pdf.setFontSize(12);
+  pdf.text(`R$ ${data.totalAmount.toFixed(2)}`, pageWidth - dataX - 2, yPosition + 6, {
     align: "right",
   });
 
-  yPosition += 22;
+  yPosition += 12;
 
   // ============ GARANTIA (SOMENTE PARA VIDROS) ============
 
   if (data.isGlassWarranty) {
-    // Fundo destacado para a garantia
+    yPosition += 1;
+    
+    // Fundo destacado para a garantia (compacto)
     pdf.setFillColor(255, 240, 240); // Rosa claro
-    pdf.rect(dataX, yPosition, dataWidth, 28, "F");
+    pdf.rect(dataX, yPosition, dataWidth, 16, "F");
 
-    pdf.setFontSize(12);
+    pdf.setFontSize(7);
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(180, 0, 0); // Vermelho
     
     const warrantyLines = [
       "GARANTIA DE 3 MESES",
       "PARA VAZAMENTO",
-      "RETIRAR AS 4 FITAS",
-      "APÓS LIBERAÇÃO"
+      "RETIRAR AS 4 FITAS"
     ];
     
-    let warrantyY = yPosition + 4;
+    let warrantyY = yPosition + 2;
     warrantyLines.forEach(line => {
       pdf.text(line, pageWidth / 2, warrantyY, { align: "center" });
-      warrantyY += 6;
+      warrantyY += 4;
     });
 
-    yPosition += 32;
+    yPosition += 18;
 
-    // Exclusões da garantia
-    pdf.setFillColor(255, 240, 240); // Rosa claro (igual garantia)
-    pdf.rect(dataX, yPosition, dataWidth, 20, "F");
+    // Exclusões da garantia (compacto)
+    pdf.setFillColor(255, 240, 240); // Rosa claro
+    pdf.rect(dataX, yPosition, dataWidth, 10, "F");
     
-    pdf.setFontSize(12); // Mesmo tamanho da garantia
-    pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(180, 0, 0); // Vermelho
+    pdf.setFontSize(6);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(180, 0, 0);
     
-    const exclusionText = "- Não cobrimos quebra de para-brisas, vigias ou vidros de portas.";
-    const exclusionLines = pdf.splitTextToSize(exclusionText, dataWidth - 4);
-    pdf.text(exclusionLines, dataX + 2, yPosition + 5);
+    const exclusionText = "Não cobrimos quebra de para-brisas, vigias ou vidros de portas.";
+    const exclusionLines = pdf.splitTextToSize(exclusionText, dataWidth - 2);
+    pdf.text(exclusionLines, dataX + 1, yPosition + 2);
     
-    yPosition += 24;
+    yPosition += 12;
   }
 
   // ============ MÉTODO DE PAGAMENTO ============
 
-  pdf.setFontSize(normalFont);
+  yPosition += 1;
+
+  pdf.setFontSize(smallFont);
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(...primaryColor);
-  pdf.text("Método de Pagamento", dataX, yPosition);
-  yPosition += 6;
+  pdf.text("PAGAMENTO", dataX, yPosition);
+  yPosition += 3;
 
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(smallFont);
 
   const paymentLabels: { [key: string]: string } = {
-    dinheiro: "Dinheiro em Espécie",
+    dinheiro: "Dinheiro",
     pix: "PIX",
-    cartao: "Cartão de Crédito/Débito",
+    cartao: "Cartão",
   };
 
   pdf.text(paymentLabels[data.paymentMethod] || data.paymentMethod, dataX, yPosition);
-  yPosition += 10;
+  yPosition += 5;
 
   // ============ OBSERVAÇÕES ============
 
   if (data.notes) {
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(normalFont);
+    pdf.setFontSize(smallFont);
     pdf.setTextColor(...primaryColor);
-    pdf.text("Observações", dataX, yPosition);
-    yPosition += 5;
+    pdf.text("OBS", dataX, yPosition);
+    yPosition += 3;
 
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(80, 80, 80);
-    pdf.setFontSize(smallFont);
-    const notesLines = pdf.splitTextToSize(data.notes, dataWidth);
-    pdf.text(notesLines, dataX, yPosition);
-    yPosition += notesLines.length * 4 + 5;
+    pdf.setFontSize(6);
+    const notesLines = pdf.splitTextToSize(data.notes, dataWidth - 2);
+    pdf.text(notesLines, dataX + 1, yPosition);
+    yPosition += notesLines.length * 2.5 + 2;
   }
 
   // ============ RODAPÉ ============
 
-  yPosition = pageHeight - 20;
+  yPosition += 2;
   pdf.setDrawColor(...primaryColor);
-  pdf.line(15, yPosition, pageWidth - 15, yPosition);
-  yPosition += 5;
+  pdf.line(3, yPosition, pageWidth - 3, yPosition);
+  yPosition += 2;
 
-  pdf.setFontSize(smallFont);
+  pdf.setFontSize(6);
   pdf.setFont("helvetica", "italic");
   pdf.setTextColor(120, 120, 120);
-  pdf.text("Obrigado pela compra!", pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 4;
-  pdf.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")}`, pageWidth / 2, yPosition, {
+  pdf.text("Obrigado!", pageWidth / 2, yPosition, { align: "center" });
+  yPosition += 2;
+  pdf.text(`${new Date().toLocaleDateString("pt-BR")}`, pageWidth / 2, yPosition, {
     align: "center",
   });
 

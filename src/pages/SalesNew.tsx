@@ -865,27 +865,37 @@ const SalesNew = () => {
                                         </div>
 
                                         {/* Payment methods validation */}
-                                        <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border">
-                                            <div className="flex justify-between text-sm mb-1">
-                                                <span className="text-muted-foreground">Total da venda:</span>
-                                                <span className="font-semibold">R$ {calculateTotal().toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-muted-foreground">Total pagamento:</span>
-                                                <span className={`font-semibold ${
-                                                    Math.abs(calculatePaymentMethodsTotal() - calculateTotal()) < 0.01
-                                                        ? "text-success"
-                                                        : "text-destructive"
-                                                }`}>
-                                                    R$ {calculatePaymentMethodsTotal().toFixed(2)}
-                                                </span>
-                                            </div>
-                                            {Math.abs(calculatePaymentMethodsTotal() - calculateTotal()) > 0.01 && (
-                                                <p className="text-xs text-destructive mt-2">
-                                                    ⚠️ Total de pagamento não corresponde ao total da venda
-                                                </p>
-                                            )}
-                                        </div>
+                                         <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border">
+                                             <div className="flex justify-between text-sm mb-1">
+                                                 <span className="text-muted-foreground">Total da venda:</span>
+                                                 <span className="font-semibold">R$ {calculateTotal().toFixed(2)}</span>
+                                             </div>
+                                             <div className="flex justify-between text-sm mb-1">
+                                                 <span className="text-muted-foreground">Total pagamento:</span>
+                                                 <span className={`font-semibold ${
+                                                     Math.abs(calculatePaymentMethodsTotal() - calculateTotal()) < 0.01
+                                                         ? "text-success"
+                                                         : "text-destructive"
+                                                 }`}>
+                                                     R$ {calculatePaymentMethodsTotal().toFixed(2)}
+                                                 </span>
+                                             </div>
+                                             <div className="flex justify-between text-sm">
+                                                 <span className="text-muted-foreground">Falta pagar:</span>
+                                                 <span className={`font-semibold ${
+                                                     calculateTotal() - calculatePaymentMethodsTotal() > 0.01
+                                                         ? "text-orange-600"
+                                                         : "text-success"
+                                                 }`}>
+                                                     R$ {Math.max(0, calculateTotal() - calculatePaymentMethodsTotal()).toFixed(2)}
+                                                 </span>
+                                             </div>
+                                             {Math.abs(calculatePaymentMethodsTotal() - calculateTotal()) > 0.01 && (
+                                                 <p className="text-xs text-destructive mt-2">
+                                                     ⚠️ Total de pagamento não corresponde ao total da venda
+                                                 </p>
+                                             )}
+                                         </div>
                                     </div>
 
                                     <div>

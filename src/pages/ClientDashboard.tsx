@@ -25,57 +25,69 @@ interface ClientProfile {
 }
 
 interface ClientVehicle {
-     id: string;
-     vehicle: string;
-     plate: string;
-     is_national: boolean;
-     is_primary: boolean;
+    id: string;
+    vehicle: string;
+    plate: string;
+    is_national: boolean;
+    is_primary: boolean;
 }
 
 interface Appointment {
-     id: string;
-     client_id: string;
-     client_name: string;
-     service_type: string;
-     scheduled_date: string;
-     scheduled_time: string;
-     status: string;
-     notes?: string;
-     vehicle_id?: string;
+    id: string;
+    client_id: string;
+    client_name: string;
+    service_type: string;
+    scheduled_date: string;
+    scheduled_time: string;
+    status: string;
+    notes?: string;
+    vehicle_id?: string;
+    original_scheduled_date?: string;
+    original_scheduled_time?: string;
+    time_changed_at?: string;
+    time_change_reason?: string;
 }
 
 const ClientDashboard = () => {
-     const navigate = useNavigate();
-     const { session, loading, user, signOut } = useAuth();
-     const { toast } = useToast();
-     const { validateVehicle, loading: validatingVehicle } = useVehicleValidation();
-     const [clientData, setClientData] = useState<ClientProfile | null>(null);
-     const [dataLoading, setDataLoading] = useState(true);
-     const [editingSection, setEditingSection] = useState<"personal" | "vehicle" | null>(null);
-     const [formData, setFormData] = useState<ClientProfile>({
-         name: "",
-         email: "",
-         phone: "",
-         cpf: "",
-         vehicle: "",
-         plate: "",
-     });
-     const [saving, setSaving] = useState(false);
-     const [appointments, setAppointments] = useState<Appointment[]>([]);
-     const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
-     const [submittingAppointment, setSubmittingAppointment] = useState(false);
-     const [appointmentForm, setAppointmentForm] = useState({
-         service_type: "",
-         scheduled_date: "",
-         scheduled_time: "",
-         notes: "",
-         vehicle_id: "",
-     });
-     const [clientVehicles, setClientVehicles] = useState<ClientVehicle[]>([]);
-     const [addVehicleDialogOpen, setAddVehicleDialogOpen] = useState(false);
-     const [newVehicleForm, setNewVehicleForm] = useState({ vehicle: "", plate: "" });
-     const [validatingNewVehicle, setValidatingNewVehicle] = useState(false);
-     const [validationResult, setValidationResult] = useState<any>(null);
+    const navigate = useNavigate();
+    const { session, loading, user, signOut } = useAuth();
+    const { toast } = useToast();
+    const { validateVehicle, loading: validatingVehicle } = useVehicleValidation();
+    const [clientData, setClientData] = useState<ClientProfile | null>(null);
+    const [dataLoading, setDataLoading] = useState(true);
+    const [editingSection, setEditingSection] = useState<"personal" | "vehicle" | null>(null);
+    const [formData, setFormData] = useState<ClientProfile>({
+        name: "",
+        email: "",
+        phone: "",
+        cpf: "",
+        vehicle: "",
+        plate: "",
+    });
+    const [saving, setSaving] = useState(false);
+    const [appointments, setAppointments] = useState<Appointment[]>([]);
+    const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
+    const [submittingAppointment, setSubmittingAppointment] = useState(false);
+    const [appointmentForm, setAppointmentForm] = useState({
+        service_type: "",
+        scheduled_date: "",
+        scheduled_time: "",
+        notes: "",
+        vehicle_id: "",
+    });
+    const [clientVehicles, setClientVehicles] = useState<ClientVehicle[]>([]);
+    const [addVehicleDialogOpen, setAddVehicleDialogOpen] = useState(false);
+    const [newVehicleForm, setNewVehicleForm] = useState({ vehicle: "", plate: "" });
+    const [validatingNewVehicle, setValidatingNewVehicle] = useState(false);
+    const [validationResult, setValidationResult] = useState<any>(null);
+    const [editAppointmentDialogOpen, setEditAppointmentDialogOpen] = useState(false);
+    const [appointmentToEdit, setAppointmentToEdit] = useState<Appointment | null>(null);
+    const [editAppointmentForm, setEditAppointmentForm] = useState({
+        scheduled_date: "",
+        scheduled_time: "",
+    });
+    const [submittingEditAppointment, setSubmittingEditAppointment] = useState(false);
+    const [confirmingChangedAppointmentId, setConfirmingChangedAppointmentId] = useState<string | null>(null);
 
     const replacementItems = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Janela", "Porta", "Óculos", "Insumo", "Ferramenta", "Outro"];
 
@@ -115,73 +127,73 @@ const ClientDashboard = () => {
 
     // Fetch client profile data and appointments
     useEffect(() => {
-      const fetchClientData = async () => {
-        try {
-          const userId = session.user?.id;
-          const userEmail = session.user?.email;
-          console.log("🔍 Buscando cliente por User ID:", userId);
-          console.log("📧 Email:", userEmail);
-          
-          if (!userId) {
-            console.warn("⚠️ User ID não disponível");
-            setDataLoading(false);
-            return;
-          }
+        const fetchClientData = async () => {
+            try {
+                const userId = session.user?.id;
+                const userEmail = session.user?.email;
+                console.log("🔍 Buscando cliente por User ID:", userId);
+                console.log("📧 Email:", userEmail);
 
-          // Search by user_id first (mais confiável)
-          const { data, error } = await supabase
-            .from("clients")
-            .select("*")
-            .eq("user_id", userId)
-            .maybeSingle();
+                if (!userId) {
+                    console.warn("⚠️ User ID não disponível");
+                    setDataLoading(false);
+                    return;
+                }
 
-          console.log("📋 Resposta da query por user_id:", { data, error });
+                // Search by user_id first (mais confiável)
+                const { data, error } = await supabase
+                    .from("clients")
+                    .select("*")
+                    .eq("user_id", userId)
+                    .maybeSingle();
 
-          if (error && error.code !== "PGRST116") {
-            console.error("❌ Erro ao buscar cliente:", error);
-            setClientData(null);
-          } else if (data) {
-            console.log("✅ Cliente encontrado por user_id:", data);
-            setClientData(data);
-            setFormData(data);
-            // Fetch appointments and vehicles for this client
-            fetchAppointments(data.id);
-            fetchClientVehicles(data.id);
-          } else {
-            console.warn("⚠️ Nenhum cliente encontrado para user_id:", userId);
-            // Fallback: tentar buscar por email
-            console.log("🔄 Tentando fallback por email:", userEmail);
-            const { data: emailData, error: emailError } = await supabase
-              .from("clients")
-              .select("*")
-              .eq("email", userEmail)
-              .maybeSingle();
+                console.log("📋 Resposta da query por user_id:", { data, error });
 
-            if (emailData) {
-              console.log("✅ Cliente encontrado por email:", emailData);
-              setClientData(emailData);
-              setFormData(emailData);
-              fetchAppointments(emailData.id);
-              fetchClientVehicles(emailData.id);
-            } else {
-              console.warn("⚠️ Nenhum cliente encontrado. Email:", userEmail, "Error:", emailError);
-              setClientData(null);
+                if (error && error.code !== "PGRST116") {
+                    console.error("❌ Erro ao buscar cliente:", error);
+                    setClientData(null);
+                } else if (data) {
+                    console.log("✅ Cliente encontrado por user_id:", data);
+                    setClientData(data);
+                    setFormData(data);
+                    // Fetch appointments and vehicles for this client
+                    fetchAppointments(data.id);
+                    fetchClientVehicles(data.id);
+                } else {
+                    console.warn("⚠️ Nenhum cliente encontrado para user_id:", userId);
+                    // Fallback: tentar buscar por email
+                    console.log("🔄 Tentando fallback por email:", userEmail);
+                    const { data: emailData, error: emailError } = await supabase
+                        .from("clients")
+                        .select("*")
+                        .eq("email", userEmail)
+                        .maybeSingle();
+
+                    if (emailData) {
+                        console.log("✅ Cliente encontrado por email:", emailData);
+                        setClientData(emailData);
+                        setFormData(emailData);
+                        fetchAppointments(emailData.id);
+                        fetchClientVehicles(emailData.id);
+                    } else {
+                        console.warn("⚠️ Nenhum cliente encontrado. Email:", userEmail, "Error:", emailError);
+                        setClientData(null);
+                    }
+                }
+            } catch (err) {
+                console.error("❌ Erro ao carregar dados:", err);
+                setClientData(null);
+            } finally {
+                setDataLoading(false);
             }
-          }
-        } catch (err) {
-          console.error("❌ Erro ao carregar dados:", err);
-          setClientData(null);
-        } finally {
-          setDataLoading(false);
-        }
-      };
+        };
 
-      if (session?.user?.id) {
-        fetchClientData();
-      } else {
-        console.warn("⚠️ Session não pronta ou user não autenticado", session?.user);
-        setDataLoading(false);
-      }
+        if (session?.user?.id) {
+            fetchClientData();
+        } else {
+            console.warn("⚠️ Session não pronta ou user não autenticado", session?.user);
+            setDataLoading(false);
+        }
     }, [session, fetchAppointments, fetchClientVehicles]);
 
     // Auto-refresh appointments every 30 seconds
@@ -208,7 +220,7 @@ const ClientDashboard = () => {
         setValidatingNewVehicle(true);
         try {
             const result = await validateVehicle(newVehicleForm.vehicle);
-            
+
             if (!result) {
                 toast({ title: "Erro ao validar veículo", variant: "destructive" });
                 return;
@@ -240,7 +252,7 @@ const ClientDashboard = () => {
 
         try {
             const isPrimary = clientVehicles.length === 0;
-            
+
             const { error } = await supabase
                 .from("client_vehicles")
                 .insert({
@@ -308,13 +320,21 @@ const ClientDashboard = () => {
 
         setSubmittingAppointment(true);
         try {
+            // Corrigir timezone: adicionar 1 dia à data
+            const dateObj = new Date(appointmentForm.scheduled_date);
+            dateObj.setDate(dateObj.getDate() + 1);
+            const correctedDate = dateObj.toISOString().split('T')[0];
+            
+            console.log("📅 Cliente criando agendamento - Original:", appointmentForm.scheduled_date);
+            console.log("📤 Cliente criando agendamento - Corrigida:", correctedDate);
+            
             const { error } = await supabase
                 .from("appointments")
                 .insert({
                     client_id: clientData.id,
                     client_name: clientData.name,
                     service_type: appointmentForm.service_type,
-                    scheduled_date: appointmentForm.scheduled_date,
+                    scheduled_date: correctedDate,
                     scheduled_time: appointmentForm.scheduled_time,
                     status: "pendente",
                     notes: appointmentForm.notes,
@@ -384,6 +404,108 @@ const ClientDashboard = () => {
                 description: err.message,
                 variant: "destructive",
             });
+        }
+    };
+
+    const openEditAppointmentDialog = (appointment: Appointment) => {
+        // Garantir formato correto da data (YYYY-MM-DD)
+        const dateStr = typeof appointment.scheduled_date === 'string' 
+            ? appointment.scheduled_date.split('T')[0] 
+            : appointment.scheduled_date;
+        
+        setAppointmentToEdit(appointment);
+        setEditAppointmentForm({
+            scheduled_date: dateStr,
+            scheduled_time: appointment.scheduled_time,
+        });
+        setEditAppointmentDialogOpen(true);
+    };
+
+    const handleEditAppointment = async () => {
+        if (!appointmentToEdit || !editAppointmentForm.scheduled_date || !editAppointmentForm.scheduled_time) {
+            toast({ title: "Preencha data e hora", variant: "destructive" });
+            return;
+        }
+
+        // Garantir que as datas estão no formato correto (YYYY-MM-DD)
+        const currentDateStr = typeof appointmentToEdit.scheduled_date === 'string' 
+            ? appointmentToEdit.scheduled_date.split('T')[0]
+            : appointmentToEdit.scheduled_date;
+        
+        const newDateStr = editAppointmentForm.scheduled_date;
+
+        // Validar se o novo horário é posterior ao horário original/atual
+        // Comparação simples de strings no formato YYYY-MM-DD HH:mm funciona corretamente
+        const currentTimeStr = `${currentDateStr} ${appointmentToEdit.scheduled_time}`;
+        const newTimeStr = `${newDateStr} ${editAppointmentForm.scheduled_time}`;
+
+        if (newTimeStr < currentTimeStr) {
+            toast({
+                title: "Horário inválido",
+                description: "Você só pode alterar para um horário posterior. Não é permitido alterar para trás.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setSubmittingEditAppointment(true);
+        try {
+            // Corrigir timezone: adicionar 1 dia à data
+            const dateObj = new Date(newDateStr);
+            dateObj.setDate(dateObj.getDate() + 1);
+            const correctedDate = dateObj.toISOString().split('T')[0];
+            
+            console.log("📅 Cliente - ANTES DE ENVIAR:", newDateStr);
+            console.log("📤 Cliente - Data corrigida:", correctedDate);
+            
+            const { error } = await supabase
+                .from("appointments")
+                .update({
+                    scheduled_date: correctedDate,
+                    scheduled_time: editAppointmentForm.scheduled_time,
+                })
+                .eq("id", appointmentToEdit.id);
+
+            if (error) throw error;
+
+            setEditAppointmentDialogOpen(false);
+            if (clientData?.id) {
+                fetchAppointments(clientData.id);
+            }
+            toast({ title: "Horário confirmado com sucesso!" });
+        } catch (err: any) {
+            toast({
+                title: "Erro ao alterar agendamento",
+                description: err.message,
+                variant: "destructive",
+            });
+        } finally {
+            setSubmittingEditAppointment(false);
+        }
+    };
+
+    const handleConfirmChangedAppointment = async (appointmentId: string) => {
+        setConfirmingChangedAppointmentId(appointmentId);
+        try {
+            const { error } = await supabase
+                .from("appointments")
+                .update({ status: "confirmado" })
+                .eq("id", appointmentId);
+
+            if (error) throw error;
+
+            if (clientData?.id) {
+                fetchAppointments(clientData.id);
+            }
+            toast({ title: "Horário confirmado! A loja foi notificada." });
+        } catch (err: any) {
+            toast({
+                title: "Erro ao confirmar",
+                description: err.message,
+                variant: "destructive",
+            });
+        } finally {
+            setConfirmingChangedAppointmentId(null);
         }
     };
 
@@ -551,30 +673,30 @@ const ClientDashboard = () => {
                                             />
                                         </div>
                                         <div>
-                                             <Label>Veículo *</Label>
-                                             {clientVehicles.length === 0 ? (
-                                                 <p className="text-sm text-red-600 mb-2">Adicione um veículo para continuar</p>
-                                             ) : (
-                                                 <Select value={appointmentForm.vehicle_id} onValueChange={(v) => setAppointmentForm({ ...appointmentForm, vehicle_id: v })}>
-                                                     <SelectTrigger><SelectValue placeholder="Selecione um veículo..." /></SelectTrigger>
-                                                     <SelectContent>
-                                                         {clientVehicles.map((vehicle) => (
-                                                             <SelectItem key={vehicle.id} value={vehicle.id}>
-                                                                 {vehicle.vehicle} - {vehicle.plate}
-                                                             </SelectItem>
-                                                         ))}
-                                                     </SelectContent>
-                                                 </Select>
-                                             )}
-                                         </div>
-                                         <div>
-                                             <Label>Observações</Label>
-                                             <Input
-                                                 value={appointmentForm.notes}
-                                                 onChange={(e) => setAppointmentForm({ ...appointmentForm, notes: e.target.value })}
-                                                 placeholder="Algo especial que devemos saber?"
-                                             />
-                                         </div>
+                                            <Label>Veículo *</Label>
+                                            {clientVehicles.length === 0 ? (
+                                                <p className="text-sm text-red-600 mb-2">Adicione um veículo para continuar</p>
+                                            ) : (
+                                                <Select value={appointmentForm.vehicle_id} onValueChange={(v) => setAppointmentForm({ ...appointmentForm, vehicle_id: v })}>
+                                                    <SelectTrigger><SelectValue placeholder="Selecione um veículo..." /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {clientVehicles.map((vehicle) => (
+                                                            <SelectItem key={vehicle.id} value={vehicle.id}>
+                                                                {vehicle.vehicle} - {vehicle.plate}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <Label>Observações</Label>
+                                            <Input
+                                                value={appointmentForm.notes}
+                                                onChange={(e) => setAppointmentForm({ ...appointmentForm, notes: e.target.value })}
+                                                placeholder="Algo especial que devemos saber?"
+                                            />
+                                        </div>
                                         <Button
                                             onClick={handleAddAppointment}
                                             disabled={submittingAppointment}
@@ -607,22 +729,59 @@ const ClientDashboard = () => {
                                                     <p className="text-sm text-muted-foreground mt-1">
                                                         📅 {new Date(apt.scheduled_date).toLocaleDateString("pt-BR")} às {apt.scheduled_time}
                                                     </p>
+                                                    {apt.time_changed_at && (
+                                                         <div className="mt-2 p-2 bg-orange-100 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded">
+                                                             <p className="text-xs font-semibold text-orange-700 dark:text-orange-300 flex items-center gap-1">
+                                                                 🔔 Horário Alterado
+                                                             </p>
+                                                             <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                                                                 Anterior: {apt.original_scheduled_date} às {apt.original_scheduled_time}
+                                                             </p>
+                                                             {apt.time_change_reason && (
+                                                                 <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                                                                     Motivo: {apt.time_change_reason}
+                                                                 </p>
+                                                             )}
+                                                             {apt.status === "pendente" && (
+                                                                 <div className="flex gap-2 mt-2">
+                                                                     <Button
+                                                                         size="sm"
+                                                                         className="text-xs h-7 flex-1 bg-green-600 hover:bg-green-700"
+                                                                         onClick={() => handleConfirmChangedAppointment(apt.id)}
+                                                                         disabled={confirmingChangedAppointmentId === apt.id}
+                                                                     >
+                                                                         ✅ Aceitar Horário
+                                                                     </Button>
+                                                                 </div>
+                                                             )}
+                                                         </div>
+                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${apt.status === "pendente" ? "bg-amber-100 text-amber-700" : apt.status === "confirmado" ? "bg-blue-100 text-blue-700" : apt.status === "cancelado" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-                                                        {apt.status === "pendente" ? "⏳ Pendente" : apt.status === "confirmado" ? "⏱️ Confirmado" : apt.status === "cancelado" ? "✕ Cancelado" : "✓ Concluído"}
-                                                    </span>
-                                                    {canCancel && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleCancelAppointment(apt.id)}
-                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </Button>
-                                                    )}
-                                                </div>
+                                                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${apt.status === "pendente" ? "bg-amber-100 text-amber-700" : apt.status === "confirmado" ? "bg-blue-100 text-blue-700" : apt.status === "cancelado" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                                                         {apt.status === "pendente" ? "⏳ Pendente" : apt.status === "confirmado" ? "⏱️ Confirmado" : apt.status === "cancelado" ? "✕ Cancelado" : "✓ Concluído"}
+                                                     </span>
+                                                     {apt.status !== "cancelado" && apt.status !== "concluído" && (
+                                                         <Button
+                                                             variant="outline"
+                                                             size="sm"
+                                                             onClick={() => openEditAppointmentDialog(apt)}
+                                                             className="text-xs h-7"
+                                                         >
+                                                             ✏️ Alterar
+                                                         </Button>
+                                                     )}
+                                                     {canCancel && (
+                                                         <Button
+                                                             variant="ghost"
+                                                             size="sm"
+                                                             onClick={() => handleCancelAppointment(apt.id)}
+                                                             className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                                         >
+                                                             <Trash2 className="w-4 h-4" />
+                                                         </Button>
+                                                     )}
+                                                 </div>
                                             </div>
                                             {apt.notes && <p className="text-sm text-muted-foreground">💬 {apt.notes}</p>}
                                         </div>
@@ -947,6 +1106,49 @@ const ClientDashboard = () => {
                             </div>
                         )}
                     </motion.div>
+
+                    {/* Dialog para Alterar Horário de Agendamento */}
+                    <Dialog open={editAppointmentDialogOpen} onOpenChange={setEditAppointmentDialogOpen}>
+                        <DialogContent className="bg-card border-border">
+                            <DialogHeader>
+                                <DialogTitle className="font-display">Alterar Horário do Agendamento</DialogTitle>
+                            </DialogHeader>
+                            {appointmentToEdit && (
+                                <div className="space-y-4">
+                                    <div className="p-3 bg-muted/50 rounded-lg">
+                                        <p className="text-sm text-muted-foreground mb-1">Serviço</p>
+                                        <p className="font-semibold text-foreground">{appointmentToEdit.service_type}</p>
+                                        <p className="text-xs text-muted-foreground mt-2">
+                                            Horário atual: {new Date(appointmentToEdit.scheduled_date).toLocaleDateString("pt-BR")} às {appointmentToEdit.scheduled_time}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <Label>Nova Data *</Label>
+                                        <Input
+                                            type="date"
+                                            value={editAppointmentForm.scheduled_date}
+                                            onChange={(e) => setEditAppointmentForm({ ...editAppointmentForm, scheduled_date: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Novo Horário *</Label>
+                                        <Input
+                                            type="time"
+                                            value={editAppointmentForm.scheduled_time}
+                                            onChange={(e) => setEditAppointmentForm({ ...editAppointmentForm, scheduled_time: e.target.value })}
+                                        />
+                                    </div>
+                                    <Button
+                                        onClick={handleEditAppointment}
+                                        disabled={submittingEditAppointment}
+                                        className="w-full gradient-primary text-primary-foreground font-semibold"
+                                    >
+                                        {submittingEditAppointment ? "Alterando..." : "Confirmar Horário"}
+                                    </Button>
+                                </div>
+                            )}
+                        </DialogContent>
+                    </Dialog>
                 </motion.div>
             </main>
         </div>
