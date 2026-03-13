@@ -237,6 +237,15 @@ const SalesNew = () => {
             return;
         }
 
+        if (currentItem.unit_price === undefined || currentItem.unit_price === null || currentItem.unit_price === "") {
+            toast({
+                title: "Preço unitário obrigatório",
+                description: "Preencha o preço unitário antes de adicionar o produto",
+                variant: "destructive",
+            });
+            return;
+        }
+
         // Add item with all employees
         setSaleItems([
             ...saleItems,
@@ -661,9 +670,10 @@ const SalesNew = () => {
                                                     <Input
                                                         type="number"
                                                         step="0.01"
-                                                        value={currentItem.unit_price || products.find((p) => p.id === currentItem.product_id)?.price || 0}
+                                                        placeholder={String(products.find((p) => p.id === currentItem.product_id)?.price || 0)}
+                                                        value={currentItem.unit_price !== undefined && currentItem.unit_price !== null ? currentItem.unit_price : ""}
                                                         onChange={(e) =>
-                                                            setCurrentItem({ ...currentItem, unit_price: parseFloat(e.target.value) || 0 })
+                                                            setCurrentItem({ ...currentItem, unit_price: e.target.value ? parseFloat(e.target.value) : undefined })
                                                         }
                                                     />
                                                 </div>

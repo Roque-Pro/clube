@@ -239,15 +239,18 @@ export const generateReceipt = async (data: ReceiptData): Promise<Blob> => {
   // Lista de produtos (compacta)
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(0, 0, 0);
-  pdf.setFontSize(smallFont);
   
   data.products.forEach((product, index) => {
-    // Produto (sem número, mais compacto)
+    // Produto (sem número, mais compacto) - AUMENTADO PARA 10
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "bold");
     const productLines = pdf.splitTextToSize(product.name, dataWidth - 1);
     pdf.text(productLines, dataX + 1, yPosition);
-    yPosition += productLines.length * 3 + 1;
+    yPosition += productLines.length * 3.5 + 1;
+    pdf.setFont("helvetica", "normal");
 
     // Quantidade e preço em uma linha compacta
+    pdf.setFontSize(smallFont);
     const qtyPrice = `Qtd: ${product.quantity} | R$ ${product.unitPrice.toFixed(2)}`;
     pdf.text(qtyPrice, dataX + 1, yPosition);
     yPosition += 3;
