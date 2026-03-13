@@ -144,9 +144,9 @@ export const generateReceipt = async (data: ReceiptData): Promise<Blob> => {
   
   // Logo centralizada no topo (bem menor para 80mm)
   try {
-    const logoBase64 = await loadImageAsBase64(new URL("../img/iguacu_vidros_black.PNG", import.meta.url).href);
+    const logoBase64 = await loadImageAsBase64(new URL("../img/iguacu_vidros_black.png", import.meta.url).href);
     // Logo reduzida para 80mm
-    pdf.addImage(logoBase64, "JPEG", pageWidth / 2 - 14, yPosition, 28, 24, undefined, "MEDIUM");
+    pdf.addImage(logoBase64, "PNG", pageWidth / 2 - 14, yPosition, 28, 24, undefined, "MEDIUM");
     yPosition += 26;
   } catch (err) {
     console.warn("Erro ao carregar logo:", err);
