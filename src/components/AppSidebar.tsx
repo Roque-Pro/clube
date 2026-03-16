@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Package, UserCog, History, Shield, LogOut, Settings, ShoppingCart } from "lucide-react";
+import { LayoutDashboard, Users, Package, UserCog, History, Shield, LogOut, Settings, ShoppingCart, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -16,6 +16,7 @@ const AppSidebar = ({ onClose }: AppSidebarProps) => {
     { to: "/clientes", icon: Users, label: "Clientes" },
     { to: "/estoque", icon: Package, label: "Estoque" },
     { to: "/vendas", icon: ShoppingCart, label: "Vendas" },
+    { to: "/analise", icon: BarChart3, label: "Análise" },
     { to: "/historico", icon: History, label: "Histórico" },
     ...(isAdmin ? [{ to: "/admin", icon: Settings, label: "Painel Admin" }] : []),
   ];

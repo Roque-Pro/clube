@@ -24,6 +24,8 @@ interface Product {
      store?: string;
      code?: string;
      description?: string;
+     is_prime?: boolean;
+     sale_price?: number;
 }
 
 const productCategories = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Janela", "Porta", "Óculos", "Insumo", "Ferramenta", "Outro"];
@@ -42,6 +44,8 @@ const Inventory = () => {
     const [quantityModalOpen, setQuantityModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [quantityChange, setQuantityChange] = useState("");
+    const [editingPrime, setEditingPrime] = useState(false);
+    const [primeForm, setPrimeForm] = useState({ is_prime: false, cost_price: 0, sale_price: 0 });
 
     const fetchProducts = async () => {
         try {
@@ -158,6 +162,12 @@ const Inventory = () => {
     const openQuantityModal = (product: Product) => {
         setSelectedProduct(product);
         setQuantityChange("");
+        setPrimeForm({
+            is_prime: product.is_prime || false,
+            cost_price: product.cost_price || 0,
+            sale_price: product.sale_price || 0,
+        });
+        setEditingPrime(false);
         setQuantityModalOpen(true);
     };
 
@@ -211,6 +221,39 @@ const Inventory = () => {
             setQuantityModalOpen(false);
         } catch (error) {
             toast({ title: "Erro ao atualizar estoque", variant: "destructive" });
+        }
+    };
+
+    const handleSavePrime = async () => {
+        if (!selectedProduct) return;
+        
+        try {
+            const { error } = await supabase
+                .from("products")
+                .update({
+                    is_prime: primeForm.is_prime,
+                    cost_price: primeForm.cost_price,
+                    sale_price: primeForm.sale_price,
+                })
+                .eq("id", selectedProduct.id);
+
+            if (error) throw error;
+
+            // Log da ação
+            const primeLabel = primeForm.is_prime ? "✅ Marcado como PRIME" : "❌ Desmarcado como PRIME";
+            logAction("update", "products", selectedProduct.id, selectedProduct.name, 
+                `${primeLabel} - Custo: R$ ${primeForm.cost_price.toFixed(2)} - Venda: R$ ${primeForm.sale_price.toFixed(2)}`);
+
+            toast({ title: "Produto atualizado com sucesso!", variant: "default" });
+            setEditingPrime(false);
+            fetchProducts();
+            setQuantityModalOpen(false);
+        } catch (error: any) {
+            toast({
+                title: "Erro ao atualizar produto",
+                description: error.message,
+                variant: "destructive",
+            });
         }
     };
 
@@ -385,7 +428,7 @@ const Inventory = () => {
             )}
 
             <Dialog open={quantityModalOpen} onOpenChange={setQuantityModalOpen}>
-                <DialogContent className="bg-card border-border">
+                <DialogContent className="bg-card border-border max-w-md">
                     <DialogHeader>
                         <DialogTitle className="font-display">Gerenciar Estoque</DialogTitle>
                     </DialogHeader>
@@ -399,36 +442,116 @@ const Inventory = () => {
                                 </p>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Quantidade a ajustar *</Label>
-                                <Input
-                                    type="number"
-                                    value={quantityChange}
-                                    onChange={(e) => setQuantityChange(e.target.value)}
-                                    placeholder="Digite o número de unidades"
-                                    min="1"
-                                />
-                            </div>
+                            {!editingPrime ? (
+                                <>
+                                    <div className="space-y-2">
+                                        <Label>Quantidade a ajustar *</Label>
+                                        <Input
+                                            type="number"
+                                            value={quantityChange}
+                                            onChange={(e) => setQuantityChange(e.target.value)}
+                                            placeholder="Digite o número de unidades"
+                                            min="1"
+                                        />
+                                    </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                 <Button
-                                     onClick={handleAddStock}
-                                     className="gradient-primary text-primary-foreground font-semibold gap-2"
-                                 >
-                                     ➕ Adicionar (Compra)
-                                 </Button>
-                                 <Button
-                                     onClick={handleRemoveStock}
-                                     variant="destructive"
-                                     className="font-semibold gap-2"
-                                 >
-                                     ➖ Remover (Venda)
-                                 </Button>
-                             </div>
-                            </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <Button
+                                            onClick={handleAddStock}
+                                            className="gradient-primary text-primary-foreground font-semibold gap-2"
+                                        >
+                                            ➕ Adicionar (Compra)
+                                        </Button>
+                                        <Button
+                                            onClick={handleRemoveStock}
+                                            variant="destructive"
+                                            className="font-semibold gap-2"
+                                        >
+                                            ➖ Remover (Venda)
+                                        </Button>
+                                    </div>
+
+                                    <Button
+                                        onClick={() => setEditingPrime(true)}
+                                        variant="outline"
+                                        className="w-full border-blue-300 text-blue-600 hover:bg-blue-50"
+                                    >
+                                        🎯 Configurar PRIME
+                                    </Button>
+                                </>
+                            ) : (
+                                <div className="space-y-4 border-t pt-4">
+                                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                        <Label className="font-semibold text-blue-900">Modelo PRIME - Margem de Lucro</Label>
+                                        <p className="text-xs text-blue-800 mt-1">Produto com preço especial diferenciado</p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={primeForm.is_prime}
+                                                onChange={(e) => setPrimeForm({ ...primeForm, is_prime: e.target.checked })}
+                                                className="w-4 h-4 rounded border-gray-300"
+                                            />
+                                            <span>Marcar como PRIME</span>
+                                        </Label>
+                                    </div>
+
+                                    {primeForm.is_prime && (
+                                        <>
+                                            <div>
+                                                <Label>Preço de Custo (R$) *</Label>
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={primeForm.cost_price}
+                                                    onChange={(e) => setPrimeForm({ ...primeForm, cost_price: parseFloat(e.target.value) || 0 })}
+                                                    placeholder="150.00"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <Label>Preço de Venda (R$) *</Label>
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={primeForm.sale_price}
+                                                    onChange={(e) => setPrimeForm({ ...primeForm, sale_price: parseFloat(e.target.value) || 0 })}
+                                                    placeholder="250.00"
+                                                />
+                                            </div>
+
+                                            {primeForm.sale_price > 0 && primeForm.cost_price > 0 && (
+                                                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                                                    <p className="text-sm text-green-900">
+                                                        <strong>Margem/Comissão:</strong> R$ {(primeForm.sale_price - primeForm.cost_price).toFixed(2)}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Button
+                                            onClick={handleSavePrime}
+                                            className="gradient-primary text-primary-foreground font-semibold"
+                                        >
+                                            Salvar
+                                        </Button>
+                                        <Button
+                                            onClick={() => setEditingPrime(false)}
+                                            variant="outline"
+                                        >
+                                            Cancelar
+                                        </Button>
+                                    </div>
+                                </div>
                             )}
-                            </DialogContent>
-                            </Dialog>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

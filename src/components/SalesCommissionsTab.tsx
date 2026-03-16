@@ -28,6 +28,11 @@ interface Transaction {
   description: string;
   value: number;
   date: string;
+  isPrime?: boolean;
+  primeCommission?: number;
+  commissionType?: string;
+  commissionValue?: number;
+  calculatedCommission?: number;
 }
 
 export const SalesCommissionsTab = () => {
@@ -103,6 +108,11 @@ export const SalesCommissionsTab = () => {
           description: sale.description,
           value: sale.amount,
           date: sale.sale_date,
+          isPrime: sale.is_prime,
+          primeCommission: sale.prime_commission,
+          commissionType: sale.commission_type,
+          commissionValue: sale.commission_value,
+          calculatedCommission: sale.calculated_commission,
         }));
 
       // Combinar transações de serviços e vendas
@@ -115,7 +125,17 @@ export const SalesCommissionsTab = () => {
 
       trans.forEach((transaction) => {
         const existing = commissionsMap.get(transaction.employeeId);
-        const commission = transaction.value * 0.01; // 1% commission
+        // Prioridade de cálculo:
+        // 1. Se tem calculated_commission (customizado na venda) usa esse
+        // 2. Se é PRIME, usa prime_commission
+        // 3. Senão usa 1% padrão
+        let commission = transaction.value * 0.01;
+        
+        if (transaction.calculatedCommission !== undefined && transaction.calculatedCommission !== null) {
+          commission = transaction.calculatedCommission;
+        } else if (transaction.isPrime && transaction.primeCommission) {
+          commission = transaction.primeCommission;
+        }
 
         if (existing) {
           commissionsMap.set(transaction.employeeId, {
@@ -177,7 +197,17 @@ export const SalesCommissionsTab = () => {
 
     filteredTrans.forEach((transaction) => {
       const existing = commissionsMap.get(transaction.employeeId);
-      const commission = transaction.value * 0.01; // 1% commission
+      // Prioridade de cálculo:
+      // 1. Se tem calculated_commission (customizado na venda) usa esse
+      // 2. Se é PRIME, usa prime_commission
+      // 3. Senão usa 1% padrão
+      let commission = transaction.value * 0.01;
+      
+      if (transaction.calculatedCommission !== undefined && transaction.calculatedCommission !== null) {
+        commission = transaction.calculatedCommission;
+      } else if (transaction.isPrime && transaction.primeCommission) {
+        commission = transaction.primeCommission;
+      }
 
       if (existing) {
         commissionsMap.set(transaction.employeeId, {
@@ -669,8 +699,11 @@ export const SalesCommissionsTab = () => {
                       <th className="px-6 py-3 text-right text-xs font-semibold text-muted-foreground">
                         Valor
                       </th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-muted-foreground">
+                        Tipo
+                      </th>
                       <th className="px-6 py-3 text-right text-xs font-semibold text-muted-foreground">
-                        Comissão (1%)
+                        Comissão
                       </th>
                     </tr>
                   </thead>
@@ -697,8 +730,31 @@ export const SalesCommissionsTab = () => {
                         <td className="px-6 py-3 text-sm font-semibold text-success text-right">
                           R$ {trans.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </td>
+                        <td className="px-6 py-3 text-sm text-center">
+                          {trans.calculatedCommission !== undefined && trans.calculatedCommission !== null ? (
+                            <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 font-semibold">
+                              ⚙️ CUSTOM
+                            </span>
+                          ) : trans.isPrime ? (
+                            <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 font-semibold">
+                              🎯 PRIME
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                              Normal
+                            </span>
+                          )}
+                        </td>
                         <td className="px-6 py-3 text-sm font-bold text-primary text-right">
-                          R$ {(trans.value * 0.01).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          R$ {(() => {
+                            let comm = trans.value * 0.01;
+                            if (trans.calculatedCommission !== undefined && trans.calculatedCommission !== null) {
+                              comm = trans.calculatedCommission;
+                            } else if (trans.isPrime && trans.primeCommission) {
+                              comm = trans.primeCommission;
+                            }
+                            return comm.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+                          })()}
                         </td>
                       </motion.tr>
                     ))}

@@ -16,6 +16,7 @@ import { SalesCommissionsTab } from "@/components/SalesCommissionsTab";
 import { FinancialAuthModal } from "@/components/FinancialAuthModal";
 import { ProductDocumentsTab } from "@/components/ProductDocumentsTab";
 import { RearrangeProductModal } from "@/components/RearrangeProductModal";
+import { StoreCashBox } from "@/components/StoreCashBox";
 
 interface Employee {
   id: string;
@@ -71,7 +72,7 @@ const AdminPanel = () => {
      const [sales, setSales] = useState<any[]>([]);
      const [search, setSearch] = useState("");
      const [activeTab, setActiveTab] = useState<"employees" | "inventory" | "estoque" | "patrimonio" | "financial" | "comissoes">("employees");
-     const [activeFinancialTab, setActiveFinancialTab] = useState<"receitas" | "despesas" | "patrimonio" | "estoque" | "vendas">("despesas");
+     const [activeFinancialTab, setActiveFinancialTab] = useState<"receitas" | "despesas" | "patrimonio" | "estoque" | "vendas" | "caixa">("caixa");
      const [loading, setLoading] = useState(true);
      const { toast } = useToast();
      const [dialogOpen, setDialogOpen] = useState(false);
@@ -2407,6 +2408,17 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
             <div className="border-b border-border">
               <div className="flex gap-0 overflow-x-auto">
                 <button
+                  onClick={() => setActiveFinancialTab("caixa")}
+                  className={cn(
+                    "px-6 py-3 text-sm font-semibold border-b-2 transition-colors",
+                    activeFinancialTab === "caixa"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  🏪 Caixa por Loja
+                </button>
+                <button
                   onClick={() => setActiveFinancialTab("receitas")}
                   className={cn(
                     "px-6 py-3 text-sm font-semibold border-b-2 transition-colors",
@@ -2465,6 +2477,11 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                 </div>
 
             <div className="p-6">
+              {/* TAB: CAIXA POR LOJA */}
+              {activeFinancialTab === "caixa" && (
+                <StoreCashBox />
+              )}
+
               {/* TAB: RECEITAS */}
               {activeFinancialTab === "receitas" && (
                 <div className="space-y-4">

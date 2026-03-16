@@ -12,6 +12,7 @@ import Inventory from "./pages/Inventory";
 import History from "./pages/History";
 import AdminPanel from "./pages/AdminPanel";
 import SalesNew from "./pages/SalesNew";
+import Analytics from "./pages/Analytics";
 import Auth from "./pages/Auth";
 import PlanAuth from "./pages/PlanAuth";
 import ClientDashboard from "./pages/ClientDashboard";
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/clientes" element={<Clients />} />
               <Route path="/estoque" element={<Inventory />} />
               <Route path="/vendas" element={<SalesNew />} />
+              <Route path="/analise" element={<Analytics />} />
               <Route path="/historico" element={<History />} />
               <Route path="/admin" element={<AdminPanel />} />
             </Route>

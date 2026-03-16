@@ -20,6 +20,9 @@ interface Product {
   quantity: number;
   price: number;
   supplier: string;
+  is_prime?: boolean;
+  cost_price?: number;
+  sale_price?: number;
 }
 
 interface Employee {
@@ -39,6 +42,9 @@ interface Sale {
   unit_price?: number;
   employee_id?: string;
   employee_name?: string;
+  commission_type?: string;
+  commission_value?: number;
+  calculated_commission?: number;
 }
 
 const Sales = () => {
@@ -58,7 +64,10 @@ const Sales = () => {
     notes: "",
     payment_method: "dinheiro",
     employee_id: "",
+    commission_type: "percentual",
+    commission_value: "1",
   });
+  const [isPrimeProduct, setIsPrimeProduct] = useState(false);
   const [totalSales, setTotalSales] = useState(0);
   const [showValues, setShowValues] = useState(true);
   const [generatingReceipt, setGeneratingReceipt] = useState<string | null>(null);
@@ -180,7 +189,18 @@ const Sales = () => {
       return;
     }
 
-    const saleAmount = quantity * selectedProduct.price;
+    // Se é produto PRIME, usar sale_price; se não, usar price
+    const priceToUse = isPrimeProduct && selectedProduct.sale_price ? selectedProduct.sale_price : selectedProduct.price;
+    const costValue = isPrimeProduct && selectedProduct.cost_price ? selectedProduct.cost_price : 0;
+    const primeCommission = isPrimeProduct ? (priceToUse - costValue) * quantity : 0;
+    const saleAmount = quantity * priceToUse;
+
+    // Calcular comissão customizada
+    const commissionType = saleForm.commission_type || "percentual";
+    const commissionValue = parseFloat(saleForm.commission_value || "1");
+    const calculatedCommission = commissionType === "percentual" 
+      ? (saleAmount * commissionValue) / 100
+      : commissionValue;
 
     setSubmitting(true);
     try {
@@ -195,9 +215,15 @@ const Sales = () => {
         notes: saleForm.notes || "",
         payment_method: saleForm.payment_method,
         quantity: quantity,
-        unit_price: selectedProduct.price,
+        unit_price: priceToUse,
         employee_id: saleForm.employee_id,
         employee_name: selectedEmployee.name,
+        is_prime: isPrimeProduct,
+        cost_value: costValue * quantity,
+        prime_commission: primeCommission,
+        commission_type: commissionType,
+        commission_value: commissionValue,
+        calculated_commission: calculatedCommission,
       }).select();
 
       if (saleError) throw saleError;
@@ -212,7 +238,7 @@ const Sales = () => {
             product_id: saleForm.product_id,
             employee_id: saleForm.employee_id,
             quantity: quantity,
-            unit_price: selectedProduct.price,
+            unit_price: priceToUse,
             subtotal: saleAmount,
           });
 
@@ -467,6 +493,7 @@ const Sales = () => {
                                    setSaleForm({ ...saleForm, product_id: product.id });
                                    setProductSearch(product.name);
                                    setShowProductDropdown(false);
+                                   setIsPrimeProduct(product.is_prime || false);
                                  }}
                                  className="w-full text-left px-4 py-2 hover:bg-muted/50 border-b border-border/50 last:border-0 transition-colors flex justify-between items-center"
                                >
@@ -489,18 +516,40 @@ const Sales = () => {
                   <div className="p-4 bg-muted rounded-lg">
                     {(() => {
                       const product = products.find((p) => p.id === saleForm.product_id);
+                      const displayPrice = isPrimeProduct && product?.sale_price ? product.sale_price : product?.price;
+                      const totalPrice = Number(saleForm.quantity) * (displayPrice || 0);
+                      const primeCommissionDisplay = isPrimeProduct && product?.sale_price && product?.cost_price 
+                        ? (product.sale_price - product.cost_price) * Number(saleForm.quantity) 
+                        : 0;
                       return (
                         <div className="space-y-2 text-sm">
+                          {isPrimeProduct && product?.is_prime && (
+                            <div className="p-2 bg-blue-100 border border-blue-300 rounded text-blue-900 mb-2">
+                              <strong>🎯 Produto PRIME</strong>
+                            </div>
+                          )}
                           <p>
-                            <strong>Preço unitário:</strong> R$ {product?.price.toFixed(2)}
+                            <strong>Preço unitário:</strong> R$ {displayPrice?.toFixed(2)}
                           </p>
+                          {isPrimeProduct && product?.cost_price && (
+                            <p>
+                              <strong>Custo:</strong> R$ {product.cost_price.toFixed(2)}
+                            </p>
+                          )}
                           <p>
                             <strong>Estoque:</strong> {product?.quantity} unidades
                           </p>
                           {saleForm.quantity && (
-                            <p className="text-success font-semibold">
-                              <strong>Total:</strong> R$ {(Number(saleForm.quantity) * (product?.price || 0)).toFixed(2)}
-                            </p>
+                            <>
+                              <p className="text-success font-semibold">
+                                <strong>Total:</strong> R$ {totalPrice.toFixed(2)}
+                              </p>
+                              {isPrimeProduct && primeCommissionDisplay > 0 && (
+                                <p className="text-blue-600 font-semibold">
+                                  <strong>Margem (comissão):</strong> R$ {primeCommissionDisplay.toFixed(2)}
+                                </p>
+                              )}
+                            </>
                           )}
                         </div>
                       );
@@ -533,6 +582,52 @@ const Sales = () => {
                      </SelectContent>
                    </Select>
                  </div>
+
+                <div className="border-t pt-4">
+                  <Label className="font-semibold text-primary mb-3 block">💰 COMISSÃO DO VENDEDOR</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="commission-type">Tipo *</Label>
+                      <Select value={saleForm.commission_type || "percentual"} onValueChange={(value) => setSaleForm({ ...saleForm, commission_type: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="percentual">% Porcentagem</SelectItem>
+                          <SelectItem value="fixo">R$ Valor Fixo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="commission-value">Valor *</Label>
+                      <Input
+                        id="commission-value"
+                        type="number"
+                        step="0.01"
+                        placeholder={saleForm.commission_type === "percentual" ? "1" : "5.00"}
+                        value={saleForm.commission_value}
+                        onChange={(e) => setSaleForm({ ...saleForm, commission_value: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  {saleForm.quantity && saleForm.product_id && (
+                    (() => {
+                      const product = products.find((p) => p.id === saleForm.product_id);
+                      const displayPrice = isPrimeProduct && product?.sale_price ? product.sale_price : product?.price;
+                      const totalPrice = Number(saleForm.quantity) * (displayPrice || 0);
+                      const commType = saleForm.commission_type || "percentual";
+                      const commValue = parseFloat(saleForm.commission_value || "1");
+                      const commCalculated = commType === "percentual" ? (totalPrice * commValue) / 100 : commValue;
+                      return (
+                        <div className="mt-3 p-2 bg-primary/10 rounded border border-primary/20 text-sm">
+                          <p className="text-muted-foreground">
+                            Comissão: <span className="font-bold text-primary">R$ {commCalculated.toFixed(2)}</span>
+                          </p>
+                        </div>
+                      );
+                    })()
+                  )}
+                </div>
 
                 <div>
                    <Label htmlFor="notes">Observações</Label>
