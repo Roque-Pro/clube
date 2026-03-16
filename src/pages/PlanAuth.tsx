@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { Shield, Mail, Lock, User, Check, ArrowLeft as ArrowLeftIcon, Loader } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import { VehicleValidationModal } from "@/components/VehicleValidationModal";
 
 const PlanAuth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { session, loading } = useAuth();
   const { toast } = useToast();
   const { validateVehicle, loading: validatingVehicle } =
@@ -28,6 +29,13 @@ const PlanAuth = () => {
   const [plate, setPlate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPlanInfo, setShowPlanInfo] = useState(true);
+
+  useEffect(() => {
+    // Se vem com state skipPlanInfo, vai direto para o form
+    if ((location.state as any)?.skipPlanInfo) {
+      setShowPlanInfo(false);
+    }
+  }, [location]);
 
   // Vehicle validation state
   const [vehicleValidation, setVehicleValidation] = useState<{
@@ -225,13 +233,13 @@ const PlanAuth = () => {
             <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
               Seu plano completo por <strong className="text-primary text-base">R$ 239,00/ano</strong>
               <br />
-              <span className="text-xs text-gray-500">(apenas R$ 19,90/mês)</span>
+              <span className="text-sm text-primary font-semibold">(apenas R$ 19,90/mês)</span>
             </p>
 
             <div className="space-y-3 mb-6">
               <div className="flex items-start gap-3">
                 <Check className="w-4 h-4 text-success flex-shrink-0 mt-1" />
-                 <span className="text-sm text-muted-foreground"><strong>3 trocas de vidro</strong> por ano (renovação automática)</span>
+                 <span className="text-sm text-muted-foreground"><strong>3 trocas de vidro</strong> por ano - vidros, faróis, janelas e componentes (renovação automática)</span>
               </div>
               <div className="flex items-start gap-3">
                 <Check className="w-4 h-4 text-success flex-shrink-0 mt-1" />
@@ -243,7 +251,7 @@ const PlanAuth = () => {
               </div>
               <div className="flex items-start gap-3">
                 <Check className="w-4 h-4 text-success flex-shrink-0 mt-1" />
-                <span className="text-sm text-muted-foreground"><strong>Vidros 100% originais</strong> com garantia</span>
+                <span className="text-sm text-muted-foreground"><strong>100% homologados pelo INMETRO</strong> com garantia</span>
               </div>
             </div>
 

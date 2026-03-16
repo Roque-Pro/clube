@@ -1,6 +1,7 @@
 import { Calendar, TrendingUp, Users, CheckCircle, Clock, AlertCircle, Plus, Check, X } from "lucide-react";
 import { motion } from "framer-motion";
 import PageHeader from "@/components/PageHeader";
+import ClientStatusBadge from "@/components/ClientStatusBadge";
 import { mockReplacements } from "@/data/mockData";
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
@@ -36,6 +37,7 @@ interface Appointment {
      id: string;
      client_id: string;
      client_name: string;
+     client_plan_status?: "free" | "active" | "expired";
      service_type: string;
      scheduled_date: string;
      scheduled_time: string;
@@ -98,22 +100,23 @@ const Servicos = () => {
                 session?.user?.id ? supabase.from("user_roles").select("role").eq("user_id", session.user.id).single() : Promise.resolve({ data: null }),
             ]);
 
-            // Fetch appointments with vehicle info
-            const aptData = await supabase
-                .from("appointments")
-                .select(`
-                    id,
-                    client_id,
-                    client_name,
-                    service_type,
-                    scheduled_date,
-                    scheduled_time,
-                    status,
-                    notes,
-                    vehicle_id,
-                    client_vehicles(vehicle, plate)
-                `)
-                .order("scheduled_date", { ascending: true });
+            // Fetch appointments with vehicle info and client plan status
+             const aptData = await supabase
+                 .from("appointments")
+                 .select(`
+                     id,
+                     client_id,
+                     client_name,
+                     service_type,
+                     scheduled_date,
+                     scheduled_time,
+                     status,
+                     notes,
+                     vehicle_id,
+                     client_vehicles(vehicle, plate),
+                     clients(plan_status)
+                 `)
+                 .order("scheduled_date", { ascending: true });
 
             if (empData.error) throw empData.error;
             if (servData.error) throw servData.error;
@@ -133,11 +136,12 @@ const Servicos = () => {
                 setIsEmployee(true);
             }
 
-            // Map appointments to include vehicle info
+            // Map appointments to include vehicle info and client plan status
             const appointmentsWithVehicles = (aptData.data || []).map((apt: any) => ({
                 ...apt,
                 vehicle: apt.client_vehicles?.vehicle,
                 plate: apt.client_vehicles?.plate,
+                client_plan_status: apt.clients?.plan_status || "free",
             }));
 
             setEmployees(empData.data || []);
@@ -592,9 +596,15 @@ const Servicos = () => {
                                             const bgColor = apt.status === "pendente" ? "bg-amber-50 dark:bg-amber-950/20" : "bg-blue-50 dark:bg-blue-950/20";
                                             return (
                                                 <div key={apt.id} className={`p-2 md:p-3 rounded-lg ${bgColor} hover:opacity-80 transition-all border-l-4 ${borderColor}`}>
-                                                    <div className="flex items-start justify-between gap-2">
-                                                        <div className="flex-1">
-                                                             <p className="text-sm font-medium text-foreground truncate">{apt.client_name}</p>
+                                                     <div className="flex items-start justify-between gap-2">
+                                                         <div className="flex-1">
+                                                              <div className="text-sm font-medium text-foreground truncate mb-1">
+                                                                  <ClientStatusBadge 
+                                                                      clientName={apt.client_name} 
+                                                                      planStatus={apt.client_plan_status}
+                                                                      size="md"
+                                                                  />
+                                                              </div>
                                                              <p className="text-xs text-muted-foreground">📋 {apt.service_type}</p>
                                                              {apt.vehicle && <p className="text-xs text-muted-foreground">🚗 {apt.vehicle} ({apt.plate})</p>}
                                                              {apt.notes && <p className="text-xs text-muted-foreground mt-1">💬 {apt.notes}</p>}
@@ -657,9 +667,15 @@ const Servicos = () => {
                                         .sort((a, b) => new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime())
                                         .map((apt) => (
                                             <div key={apt.id} className="p-2 md:p-3 rounded-lg bg-green-50 dark:bg-green-950/20 hover:opacity-80 transition-all border-l-4 border-green-500">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div className="flex-1">
-                                                         <p className="text-sm font-medium text-foreground truncate">{apt.client_name}</p>
+                                                 <div className="flex items-start justify-between gap-2">
+                                                     <div className="flex-1">
+                                                          <div className="text-sm font-medium text-foreground truncate mb-1">
+                                                              <ClientStatusBadge 
+                                                                  clientName={apt.client_name} 
+                                                                  planStatus={apt.client_plan_status}
+                                                                  size="md"
+                                                              />
+                                                          </div>
                                                          <p className="text-xs text-muted-foreground">📋 {apt.service_type}</p>
                                                          {apt.vehicle && <p className="text-xs text-muted-foreground">🚗 {apt.vehicle} ({apt.plate})</p>}
                                                          {apt.notes && <p className="text-xs text-muted-foreground mt-1">💬 {apt.notes}</p>}

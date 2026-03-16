@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Plus, Search, UserCheck, UserX, Repeat, Edit2, Eye } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PageHeader from "@/components/PageHeader";
+import ClientStatusBadge from "@/components/ClientStatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -646,7 +647,13 @@ const Clients = () => {
                                             {client.active && !isExpired ? <UserCheck className="w-5 h-5 text-success" /> : <UserX className="w-5 h-5 text-destructive" />}
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="font-semibold text-foreground truncate">{client.name}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-semibold text-foreground truncate">{client.name}</p>
+                                                <ClientStatusBadge
+                                                    planStatus={client.planActive ? "active" : "free"}
+                                                    size="sm"
+                                                />
+                                            </div>
                                             <p className="text-sm text-muted-foreground">{client.vehicle} • {client.plate}</p>
                                         </div>
                                     </div>

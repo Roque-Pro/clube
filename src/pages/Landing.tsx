@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -20,6 +20,7 @@ import {
     MapPin,
     ChevronLeft,
     ChevronRight,
+    X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,16 @@ const Landing = () => {
     const [submitted, setSubmitted] = useState(false);
     const [slideIndex, setSlideIndex] = useState(0);
     const [heroSlideIndex, setHeroSlideIndex] = useState(0);
+    const [showAgendamentoModal, setShowAgendamentoModal] = useState(false);
+
+    useEffect(() => {
+        // Abre o modal quando a página carrega
+        const timer = setTimeout(() => {
+            setShowAgendamentoModal(true);
+        }, 500); // Pequeno delay para melhor UX
+        
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleSubscribe = (e: React.FormEvent) => {
         e.preventDefault();
@@ -76,8 +87,8 @@ const Landing = () => {
         },
         {
             title: "Faróis",
-            subtitle: "Reparos e Restauração",
-            description: "Restauração de faróis opacos e reparos profissionais",
+            subtitle: "Troca",
+            description: "Troque faróis, não fazemos reparos e restauração, fazemos somente trocas",
             icon: "💡",
         },
         {
@@ -474,7 +485,7 @@ const Landing = () => {
                 </div>
             </section>
 
-            {/* Clube do Vidro Section - Segunda posição */}
+            {/* Agendamento Rápido Section */}
             <section className="relative py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white">
                 <div className="max-w-6xl mx-auto">
                     <motion.div
@@ -485,10 +496,10 @@ const Landing = () => {
                         className="text-center mb-12"
                     >
                         <h2 className="text-4xl sm:text-5xl font-display font-black text-gray-900 mb-4">
-                            Clube do Vidro
+                            Agendamento Rápido e Fácil
                         </h2>
                         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                            Proteção completa para seu veículo com trocas anuais e suporte dedicado
+                            Agende seu serviço com conforto e segurança
                         </p>
                     </motion.div>
 
@@ -502,27 +513,27 @@ const Landing = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                             <div className="flex flex-col justify-center">
                                 <h3 className="text-3xl font-display font-bold text-blue-700 mb-4">
-                                    Tranquilidade Garantida
+                                    Agende Agora
                                 </h3>
                                 <p className="text-gray-700 mb-6 text-lg leading-relaxed">
-                                    Mantenha seu carro protegido com nosso plano anual de manutenção. 3 trocas de vidro, agendamento facilitado e suporte 24/7.
+                                    Precisa apenas de um cadastro rápido para realizar seu agendamento com conforto, segurança e profissionalismo. Nossa equipe está pronta para atender você da melhor forma possível.
                                 </p>
                                 <div className="space-y-3 mb-6">
                                     <div className="flex items-center gap-3">
                                         <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                        <span className="text-gray-700">3 trocas anuais incluídas</span>
+                                        <span className="text-gray-700">Cadastro rápido e seguro</span>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                        <span className="text-gray-700">Agendamento online fácil</span>
+                                        <span className="text-gray-700">Agendamento online facilitado</span>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                        <span className="text-gray-700">Suporte 24/7 dedicado</span>
+                                        <span className="text-gray-700">Atendimento profissional</span>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                        <span className="text-gray-700">Garantia de qualidade</span>
+                                        <span className="text-gray-700">Suporte 24/7 para você</span>
                                     </div>
                                 </div>
                                 <Button
@@ -530,40 +541,44 @@ const Landing = () => {
                                     size="lg"
                                     className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold w-full sm:w-auto"
                                 >
-                                    Conhecer o Plano <ArrowRight className="w-4 h-4 ml-2" />
+                                    Agendar Agora <ArrowRight className="w-4 h-4 ml-2" />
                                 </Button>
                             </div>
 
                             <div className="flex flex-col justify-center items-center">
                                 <div className="bg-white rounded-2xl p-8 shadow-lg w-full">
                                     <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-4">
-                                        Plano Anual
+                                        Processo Simples
                                     </p>
-                                    <div className="flex items-baseline gap-1 mb-2">
-                                        <span className="text-5xl font-display font-black text-blue-700">
-                                            R$ 239
-                                        </span>
-                                        <span className="text-lg text-blue-600">,00</span>
-                                    </div>
-                                    <p className="text-sm text-gray-600 mb-6">
-                                        Renovação automática ao final do período
-                                    </p>
-                                    <div className="border-t border-gray-200 pt-6">
-                                        <p className="text-sm font-semibold text-gray-900 mb-4">Incluso no plano:</p>
-                                        <ul className="space-y-3">
-                                            <li className="flex items-center gap-2">
-                                                <Shield className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                                <span className="text-gray-700">3 Trocas de Vidro</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                                                <span className="text-gray-700">Agendamento Facilitado</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <Clock className="w-5 h-5 text-orange-600 flex-shrink-0" />
-                                                <span className="text-gray-700">Suporte 24/7</span>
-                                            </li>
-                                        </ul>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">1</div>
+                                                <span className="font-semibold text-gray-900">Cadastre-se</span>
+                                            </div>
+                                            <p className="text-sm text-gray-600 ml-11">Preencha seus dados em poucos segundos</p>
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">2</div>
+                                                <span className="font-semibold text-gray-900">Escolha o Serviço</span>
+                                            </div>
+                                            <p className="text-sm text-gray-600 ml-11">Selecione o vidro ou acessório que precisa</p>
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">3</div>
+                                                <span className="font-semibold text-gray-900">Agende a Data</span>
+                                            </div>
+                                            <p className="text-sm text-gray-600 ml-11">Escolha o melhor dia e horário para você</p>
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">4</div>
+                                                <span className="font-semibold text-gray-900">Receba Confirmação</span>
+                                            </div>
+                                            <p className="text-sm text-gray-600 ml-11">Pronto! Você receberá a confirmação</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -600,32 +615,32 @@ const Landing = () => {
                         {[
                             {
                                 title: "Parabrisas",
-                                description: "Troca e reparo de parabrisas com vidros de qualidade",
+                                description: "Troca de parabrisas com vidros de qualidade",
                                 icon: Sparkles,
                             },
                             {
                                 title: "Vigias",
-                                description: "Vidros laterais e traseiros com instalação profissional",
+                                description: "Troca de vidros laterais e traseiros com instalação profissional",
                                 icon: Shield,
                             },
                             {
                                 title: "Faróis",
-                                description: "Restauração e reparos de faróis e lanternas",
+                                description: "Troca de faróis e lanternas",
                                 icon: Zap,
                             },
                             {
                                 title: "Vidros Especiais",
-                                description: "Vidros de portas, janelas e componentes diversos",
+                                description: "Troca de vidros de portas, janelas e componentes",
                                 icon: Hammer,
                             },
                             {
                                 title: "Som Automotivo e Acessórios",
-                                description: "Sistemas de som de qualidade e acessórios automotivos",
+                                description: "Som, rádios, auto-falantes, painel multimídia, insul-filme, WindowBlue, películas de alta performance e muito mais",
                                 icon: Zap,
                             },
                             {
                                 title: "Insumos e Auto Peças",
-                                description: "Insumos e peças automotivas de qualidade",
+                                description: "Troca de insumos e peças automotivas",
                                 icon: Hammer,
                             },
                         ].map((service, index) => {
@@ -854,6 +869,100 @@ const Landing = () => {
                     </div>
                 </motion.div>
             </section>
+
+            {/* Modal de Agendamento Rápido */}
+            <AnimatePresence>
+                {showAgendamentoModal && (
+                    <>
+                        {/* Overlay */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowAgendamentoModal(false)}
+                            className="fixed inset-0 bg-black/50 z-40"
+                        />
+
+                        {/* Modal */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="fixed inset-0 flex items-center justify-center z-50 p-4"
+                        >
+                            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+                                {/* Header */}
+                                <div className="bg-gradient-to-r from-blue-500 to-blue-700 p-6 text-white relative">
+                                    <button
+                                        onClick={() => setShowAgendamentoModal(false)}
+                                        className="absolute top-4 right-4 p-1 hover:bg-white/20 rounded-lg transition"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                    <h2 className="text-2xl font-display font-bold mb-2">
+                                        Agende Agora!
+                                    </h2>
+                                    <p className="text-white/90 text-sm">
+                                        Rápido, seguro e fácil
+                                    </p>
+                                </div>
+
+                                {/* Content */}
+                                <div className="p-8">
+                                    <p className="text-gray-700 mb-6 text-base leading-relaxed">
+                                        Realize seu agendamento em poucos segundos. Precisa apenas de um cadastro rápido para agendar seu serviço com <strong>conforto, segurança e profissionalismo</strong>.
+                                    </p>
+
+                                    <div className="space-y-3 mb-8">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                                <Check className="w-4 h-4 text-blue-600" />
+                                            </div>
+                                            <span className="text-sm text-gray-700">Cadastro seguro e rápido</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                                <Check className="w-4 h-4 text-blue-600" />
+                                            </div>
+                                            <span className="text-sm text-gray-700">Agendamento online facilitado</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                                <Check className="w-4 h-4 text-blue-600" />
+                                            </div>
+                                            <span className="text-sm text-gray-700">Suporte 24/7 dedicado</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                                <Check className="w-4 h-4 text-blue-600" />
+                                            </div>
+                                            <span className="text-sm text-gray-700">Profissionalismo garantido</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <Button
+                                            onClick={() => {
+                                                setShowAgendamentoModal(false);
+                                                navigate("/plan-auth", { state: { skipPlanInfo: true } });
+                                            }}
+                                            className="w-full bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-3 text-base"
+                                        >
+                                            Agendar Agora <ArrowRight className="w-4 h-4 ml-2" />
+                                        </Button>
+                                        <button
+                                            onClick={() => setShowAgendamentoModal(false)}
+                                            className="w-full py-3 text-gray-700 hover:text-gray-900 font-medium transition border border-gray-200 rounded-lg"
+                                        >
+                                            Talvez Depois
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
 
             {/* Footer */}
             <footer className="relative border-t-2 border-gray-200 bg-white">

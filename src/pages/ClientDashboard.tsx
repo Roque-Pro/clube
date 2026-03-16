@@ -11,6 +11,11 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import PlanStatusCard from "@/components/PlanStatusCard";
+import FreeTrocasCard from "@/components/FreeTrocasCard";
+import PlanPaymentModal from "@/components/PlanPaymentModal";
+import PlanPromotionCard from "@/components/PlanPromotionCard";
+import ClientStatusBadge from "@/components/ClientStatusBadge";
 
 interface ClientProfile {
     id?: string;
@@ -22,6 +27,10 @@ interface ClientProfile {
     plate: string;
     replacements_used?: number;
     max_replacements?: number;
+    plan_status?: "free" | "active" | "expired";
+    plan_paid_at?: string;
+    plan_start?: string;
+    plan_end?: string;
 }
 
 interface ClientVehicle {
@@ -88,8 +97,19 @@ const ClientDashboard = () => {
     });
     const [submittingEditAppointment, setSubmittingEditAppointment] = useState(false);
     const [confirmingChangedAppointmentId, setConfirmingChangedAppointmentId] = useState<string | null>(null);
+    const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
     const replacementItems = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Janela", "Porta", "Óculos", "Insumo", "Ferramenta", "Outro"];
+
+    // Handle payment click
+    const handlePaymentClick = async () => {
+        toast({
+            title: "Pagamento",
+            description: "Integração com Stripe será implementada em breve",
+            variant: "default",
+        });
+        // TODO: Integrar com Stripe quando disponível
+    };
 
     // All hooks must be called before any conditional logic below
 
@@ -574,52 +594,56 @@ const ClientDashboard = () => {
                 >
                     {/* Welcome Section */}
                     <div className="glass-card p-8 border border-primary/30 rounded-2xl">
-                        <h2 className="text-3xl font-display font-bold text-foreground mb-2">
-                            Bem-vindo, {clientData?.name}! 👋
-                        </h2>
+                        <div className="flex items-center gap-3 mb-2">
+                            <h2 className="text-3xl font-display font-bold text-foreground">
+                                Bem-vindo, {clientData?.name}! 👋
+                            </h2>
+                            {clientData && (
+                                <ClientStatusBadge
+                                    planStatus={clientData.plan_status || "free"}
+                                    size="md"
+                                />
+                            )}
+                        </div>
                         <p className="text-lg text-muted-foreground mb-6">
                             Você faz parte da família Clube do Vidro. Aqui você pode gerenciar seus dados e acompanhar seu plano.
                         </p>
-
-                        {/* Plan Info */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="glass-card p-4 border border-success/20">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
-                                        <Shield className="w-5 h-5 text-success" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-success font-semibold">Cliente</p>
-                                        <p className="text-lg font-bold text-success">Clube do Vidro</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="glass-card p-4 border border-primary/20">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                                        <Car className="w-5 h-5 text-primary" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Trocas/Ano</p>
-                                        <p className="text-lg font-bold text-foreground">3</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="glass-card p-4 border border-primary/20">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                                        <Shield className="w-5 h-5 text-primary" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Status</p>
-                                        <p className="text-lg font-bold text-success">Ativo</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
+
+                    {/* Plan Status Card - Replaced old card */}
+                     {clientData && (
+                         <PlanStatusCard
+                             planStatus={clientData.plan_status || "free"}
+                             planPaidAt={clientData.plan_paid_at}
+                             planEnd={clientData.plan_end}
+                             onPaymentClick={() => setPaymentModalOpen(true)}
+                             onRenewClick={() => setPaymentModalOpen(true)}
+                         />
+                     )}
+
+                     {/* Plan Promotion Card */}
+                     {clientData && (
+                         <PlanPromotionCard
+                             planStatus={clientData.plan_status || "free"}
+                         />
+                     )}
+
+                     {/* Free Trocas Card */}
+                    {clientData && (
+                        <FreeTrocasCard
+                            replacementsUsed={clientData.replacements_used || 0}
+                            maxReplacements={clientData.max_replacements || 3}
+                            planStatus={clientData.plan_status || "free"}
+                        />
+                    )}
+
+                    {/* Payment Modal */}
+                    <PlanPaymentModal
+                        isOpen={paymentModalOpen}
+                        onClose={() => setPaymentModalOpen(false)}
+                        onPaymentClick={handlePaymentClick}
+                        clientName={clientData?.name}
+                    />
 
                     {/* Appointments Section */}
                     <motion.div
