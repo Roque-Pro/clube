@@ -624,8 +624,8 @@ const Landing = () => {
                                 icon: Shield,
                             },
                             {
-                                title: "Faróis",
-                                description: "Troca de faróis e lanternas",
+                                title: "Faróis e Lanternas",
+                                description: "Troca de faróis traseiros, dianteiros e lanternas automotivas",
                                 icon: Zap,
                             },
                             {
@@ -635,12 +635,12 @@ const Landing = () => {
                             },
                             {
                                 title: "Som Automotivo e Acessórios",
-                                description: "Som, rádios, auto-falantes, painel multimídia, insul-filme, WindowBlue, películas de alta performance e muito mais",
+                                description: "Instalação de áudio automotivo, rádios, auto-falantes, painéis multimídia, insulfilm térmico, películas de proteção e muito mais",
                                 icon: Zap,
                             },
                             {
-                                title: "Insumos e Auto Peças",
-                                description: "Troca de insumos e peças automotivas",
+                                title: "Proteção e Insulfilmes",
+                                description: "WindowBlue: película de controle solar que reduz calor em até 50%, protege do UV e mantém privacidade com controle de luz",
                                 icon: Hammer,
                             },
                         ].map((service, index) => {

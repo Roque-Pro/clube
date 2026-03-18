@@ -18,18 +18,6 @@ const ClientStatusBadge = ({
 }: ClientStatusBadgeProps) => {
     const isActive = planStatus === "active";
     const isExpired = planStatus === "expired";
-    
-    const sizeClasses = {
-        sm: "w-2 h-2",
-        md: "w-3 h-3",
-        lg: "w-4 h-4",
-    };
-
-    const badgeColor = isActive 
-        ? "bg-green-500 shadow-lg shadow-green-500/50" 
-        : isExpired
-        ? "bg-orange-500 shadow-lg shadow-orange-500/50"
-        : "bg-red-500 shadow-lg shadow-red-500/50";
 
     const tooltipText = isActive 
         ? "Plano Ativo ✓" 
@@ -39,18 +27,18 @@ const ClientStatusBadge = ({
 
     const statusContent = (
         <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className={`${sizeClasses[size]} rounded-full ${badgeColor} inline-block relative flex-shrink-0`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className={`inline-flex items-center px-3 py-1 rounded-full font-bold text-xs flex-shrink-0 ${
+                isActive
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                    : isExpired
+                    ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+            }`}
         >
-            <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className={`absolute inset-0 rounded-full ${
-                    isActive ? "bg-green-500/30" : isExpired ? "bg-orange-500/30" : "bg-red-500/30"
-                }`}
-            />
+            {isActive ? "PLANO ON" : isExpired ? "PLANO EXPIRADO" : "PLANO OFF"}
         </motion.div>
     );
 

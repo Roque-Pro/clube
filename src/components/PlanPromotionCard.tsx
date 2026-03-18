@@ -38,7 +38,7 @@ const PlanPromotionCard = ({ planStatus }: PlanPromotionCardProps) => {
                         </div>
                         <div className="flex-1">
                             <h3 className="text-lg font-display font-bold text-foreground mb-1">
-                                Proteção Total para Seu Veículo
+                                Proteção de Vidros para Seu Veículo
                             </h3>
                             <p className="text-sm text-muted-foreground leading-relaxed">
                                 Milhares de clientes já protegem seus veículos com nossa solução. Acesso a 3 trocas completas anualmente com suporte 24/7.

@@ -130,7 +130,7 @@ const PlanStatusCard = ({
                         className="w-full gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold"
                     >
                         <DollarSign className="w-4 h-4" />
-                        Ativar Plano - R$ 239/ano (R$ 19,90/mês)
+                        Ativar Plano - R$ 19,90/mês (R$ 239/ano)
                     </Button>
                 </div>
             )}

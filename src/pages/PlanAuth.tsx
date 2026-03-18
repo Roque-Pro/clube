@@ -230,16 +230,19 @@ const PlanAuth = () => {
             <h2 className="text-lg font-display font-bold text-foreground mb-4">
               Bem-vindo ao Clube do Vidro
             </h2>
-            <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-              Seu plano completo por <strong className="text-primary text-base">R$ 239,00/ano</strong>
-              <br />
-              <span className="text-sm text-primary font-semibold">(apenas R$ 19,90/mês)</span>
-            </p>
+            <div className="mb-6 text-center">
+              <p className="text-3xl font-display font-black text-primary mb-2">
+                R$ 19,90/mês
+              </p>
+              <p className="text-xs text-muted-foreground">
+                (R$ 239,00/ano)
+              </p>
+            </div>
 
             <div className="space-y-3 mb-6">
               <div className="flex items-start gap-3">
                 <Check className="w-4 h-4 text-success flex-shrink-0 mt-1" />
-                 <span className="text-sm text-muted-foreground"><strong>3 trocas de vidro</strong> por ano - vidros, faróis, janelas e componentes (renovação automática)</span>
+                 <span className="text-sm text-muted-foreground"><strong>3 trocas de vidro</strong> por ano: parabrisa, vigia, vidro de porta e janela (renovação automática)</span>
               </div>
               <div className="flex items-start gap-3">
                 <Check className="w-4 h-4 text-success flex-shrink-0 mt-1" />

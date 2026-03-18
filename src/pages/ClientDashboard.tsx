@@ -783,7 +783,7 @@ const ClientDashboard = () => {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${apt.status === "pendente" ? "bg-amber-100 text-amber-700" : apt.status === "confirmado" ? "bg-blue-100 text-blue-700" : apt.status === "cancelado" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-                                                         {apt.status === "pendente" ? "⏳ Pendente" : apt.status === "confirmado" ? "⏱️ Confirmado" : apt.status === "cancelado" ? "✕ Cancelado" : "✓ Concluído"}
+                                                         {apt.status === "pendente" ? "⏳ Aguardando confirmação da loja" : apt.status === "confirmado" ? "⏱️ Confirmado" : apt.status === "cancelado" ? "✕ Cancelado" : "✓ Concluído"}
                                                      </span>
                                                      {apt.status !== "cancelado" && apt.status !== "concluído" && (
                                                          <Button
