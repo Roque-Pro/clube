@@ -73,7 +73,7 @@ const AdminPanel = () => {
      const [expenses, setExpenses] = useState<any[]>([]);
      const [sales, setSales] = useState<any[]>([]);
      const [search, setSearch] = useState("");
-     const [activeTab, setActiveTab] = useState<"employees" | "inventory" | "estoque" | "patrimonio" | "financial" | "comissoes">("employees");
+     const [activeTab, setActiveTab] = useState<"employees" | "inventory" | "estoque" | "patrimonio" | "financial" | "comissoes">("financial");
      const [activeFinancialTab, setActiveFinancialTab] = useState<"receitas" | "despesas" | "patrimonio" | "estoque" | "vendas" | "caixa">("caixa");
      const [loading, setLoading] = useState(true);
      const { toast } = useToast();
@@ -220,6 +220,14 @@ const AdminPanel = () => {
       const isAuthenticated = sessionStorage.getItem("financial_auth") === "true";
       setFinancialAuthenticated(isAuthenticated);
     }, []);
+
+    // Limpar autenticação de funcionários quando sai da aba
+    useEffect(() => {
+      if (activeTab !== "employees") {
+        setEmployeesAuthenticated(false);
+        sessionStorage.removeItem("employees_auth");
+      }
+    }, [activeTab]);
 
     const filtered = employees.filter(
         (e) =>
