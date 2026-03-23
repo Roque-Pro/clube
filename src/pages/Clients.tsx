@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, UserCheck, UserX, Repeat, Edit2, Eye } from "lucide-react";
+import { Plus, Search, UserCheck, UserX, Repeat, Edit2, Eye, Upload } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PageHeader from "@/components/PageHeader";
 import ClientStatusBadge from "@/components/ClientStatusBadge";
@@ -14,20 +14,34 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { logAction } from "@/lib/auditLog";
 
+// Helper function para calcular status do plano
+const getPlanStatus = (planActive: boolean, planEnd?: string): "free" | "active" | "expired" => {
+    if (!planActive) return "free";
+    
+    if (planEnd) {
+        const endDate = new Date(planEnd);
+        const today = new Date();
+        if (endDate < today) return "expired";
+    }
+    
+    return "active";
+};
+
 const Clients = () => {
-    const [clients, setClients] = useState<Client[]>([]);
-    const [employees, setEmployees] = useState<any[]>([]);
-    const [replacements, setReplacements] = useState<Replacement[]>([]);
-    const [search, setSearch] = useState("");
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [replDialogOpen, setReplDialogOpen] = useState(false);
-    const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [viewDialogOpen, setViewDialogOpen] = useState(false);
-    const [viewedClient, setViewedClient] = useState<Client | null>(null);
-    const [editDialogOpen, setEditDialogOpen] = useState(false);
-    const [editingClient, setEditingClient] = useState<Client | null>(null);
-    const { toast } = useToast();
+     const [clients, setClients] = useState<Client[]>([]);
+     const [employees, setEmployees] = useState<any[]>([]);
+     const [replacements, setReplacements] = useState<Replacement[]>([]);
+     const [search, setSearch] = useState("");
+     const [dialogOpen, setDialogOpen] = useState(false);
+     const [replDialogOpen, setReplDialogOpen] = useState(false);
+     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+     const [loading, setLoading] = useState(true);
+     const [viewDialogOpen, setViewDialogOpen] = useState(false);
+     const [viewedClient, setViewedClient] = useState<Client | null>(null);
+     const [editDialogOpen, setEditDialogOpen] = useState(false);
+     const [editingClient, setEditingClient] = useState<Client | null>(null);
+     const [bulkUploadToggling, setBulkUploadToggling] = useState(false);
+     const { toast } = useToast();
 
     // Fetch clients, employees and replacements from Supabase
     useEffect(() => {
@@ -149,6 +163,49 @@ const Clients = () => {
             }
         } catch (error: any) {
             console.error("Erro ao buscar trocas:", error);
+        }
+    };
+
+    const toggleBulkUpload = async (client: Client) => {
+        setBulkUploadToggling(true);
+        try {
+            const newState = !(client as any).bulk_upload_enabled;
+            const { error } = await supabase
+                .from("clients")
+                .update({ bulk_upload_enabled: newState })
+                .eq("id", client.id);
+
+            if (error) throw error;
+
+            // Atualizar lista local
+            const updatedClients = clients.map((c) =>
+                c.id === client.id
+                    ? { ...c, bulk_upload_enabled: newState }
+                    : c
+            );
+            setClients(updatedClients);
+
+            await logAction(
+                "update",
+                "clients",
+                client.id,
+                client.name,
+                `Liberação em massa ${newState ? "ativada" : "desativada"}`
+            );
+
+            toast({
+                title: "Sucesso",
+                description: `Upload em massa ${newState ? "habilitado" : "desabilitado"} para ${client.name}`,
+            });
+        } catch (error: any) {
+            console.error("Erro ao atualizar permissão:", error);
+            toast({
+                title: "Erro",
+                description: error.message || "Não foi possível atualizar a permissão",
+                variant: "destructive",
+            });
+        } finally {
+            setBulkUploadToggling(false);
         }
     };
 
@@ -650,7 +707,7 @@ const Clients = () => {
                                             <div className="flex items-center gap-2">
                                                 <p className="font-semibold text-foreground truncate">{client.name}</p>
                                                 <ClientStatusBadge
-                                                    planStatus={client.planActive ? "active" : "free"}
+                                                    planStatus={getPlanStatus(client.planActive, client.planEnd)}
                                                     size="sm"
                                                 />
                                             </div>
@@ -694,40 +751,49 @@ const Clients = () => {
                                     </div>
 
                                     <div className="flex flex-wrap gap-2 md:gap-3">
-                                        <Button
-                                            size="sm"
-                                            variant={client.planActive ? "outline" : "destructive"}
-                                            className="gap-1 text-xs md:text-sm flex-1 md:flex-none"
-                                            onClick={() => togglePlanActive(client)}
-                                        >
-                                            {client.planActive ? "Ativo" : "Inativo"}
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="gap-1 text-xs md:text-sm flex-1 md:flex-none"
-                                            onClick={() => { setViewedClient(client); setViewDialogOpen(true); }}
-                                        >
-                                            <Eye className="w-4 h-4" /> Ver
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="gap-1 text-xs md:text-sm flex-1 md:flex-none"
-                                            onClick={() => openEditDialog(client)}
-                                        >
-                                            <Edit2 className="w-4 h-4" /> Editar
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="gap-1 text-xs md:text-sm flex-1 md:flex-none border-primary/30 text-primary hover:bg-primary/10"
-                                            disabled={client.replacementsUsed >= client.maxReplacements || isExpired || !client.planActive}
-                                            onClick={() => { setSelectedClient(client); setReplDialogOpen(true); }}
-                                        >
-                                            <Repeat className="w-4 h-4" /> Troca
-                                        </Button>
-                                    </div>
+                                         <Button
+                                             size="sm"
+                                             variant={client.planActive ? "outline" : "destructive"}
+                                             className="gap-1 text-xs md:text-sm flex-1 md:flex-none"
+                                             onClick={() => togglePlanActive(client)}
+                                         >
+                                             {client.planActive ? "Ativo" : "Inativo"}
+                                         </Button>
+                                         <Button
+                                             size="sm"
+                                             variant={(client as any).bulk_upload_enabled ? "default" : "outline"}
+                                             className={`gap-1 text-xs md:text-sm flex-1 md:flex-none ${(client as any).bulk_upload_enabled ? "bg-primary/80 hover:bg-primary" : ""}`}
+                                             onClick={() => toggleBulkUpload(client)}
+                                             disabled={bulkUploadToggling}
+                                         >
+                                             <Upload className="w-4 h-4" /> {(client as any).bulk_upload_enabled ? "Upload Ativo" : "Liberar Upload"}
+                                         </Button>
+                                         <Button
+                                             size="sm"
+                                             variant="ghost"
+                                             className="gap-1 text-xs md:text-sm flex-1 md:flex-none"
+                                             onClick={() => { setViewedClient(client); setViewDialogOpen(true); }}
+                                         >
+                                             <Eye className="w-4 h-4" /> Ver
+                                         </Button>
+                                         <Button
+                                             size="sm"
+                                             variant="ghost"
+                                             className="gap-1 text-xs md:text-sm flex-1 md:flex-none"
+                                             onClick={() => openEditDialog(client)}
+                                         >
+                                             <Edit2 className="w-4 h-4" /> Editar
+                                         </Button>
+                                         <Button
+                                             size="sm"
+                                             variant="outline"
+                                             className="gap-1 text-xs md:text-sm flex-1 md:flex-none border-primary/30 text-primary hover:bg-primary/10"
+                                             disabled={client.replacementsUsed >= client.maxReplacements || isExpired || !client.planActive}
+                                             onClick={() => { setSelectedClient(client); setReplDialogOpen(true); }}
+                                         >
+                                             <Repeat className="w-4 h-4" /> Troca
+                                         </Button>
+                                     </div>
                                 </div>
                             </motion.div>
                         );

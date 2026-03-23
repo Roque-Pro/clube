@@ -25,6 +25,7 @@ interface Product {
 interface Employee {
     id: string;
     name: string;
+    commission_percentage?: number;
 }
 
 interface SaleItemEmployee {
@@ -73,14 +74,14 @@ const SalesNew = () => {
     const { toast } = useToast();
 
     // Form state
-    const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
-    const [currentItem, setCurrentItem] = useState<Partial<SaleItem>>({
-        product_id: "",
-        employees: [],
-        quantity: 1,
-        commission_type: "percentual",
-        commission_value: 1,
-    });
+     const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
+     const [currentItem, setCurrentItem] = useState<Partial<SaleItem> & { employees: SaleItemEmployee[] }>({
+         product_id: "",
+         employees: [],
+         quantity: 0,
+         commission_type: "percentual",
+         commission_value: 1,
+     });
     const [currentEmployeeId, setCurrentEmployeeId] = useState("");
     const [currentEmpCommissionType, setCurrentEmpCommissionType] = useState("percentual");
     const [currentEmpCommissionValue, setCurrentEmpCommissionValue] = useState(1);
@@ -171,7 +172,7 @@ const SalesNew = () => {
         try {
             const { data, error } = await supabase
                 .from("employees")
-                .select("id, name")
+                .select("id, name, commission_percentage")
                 .eq("active", true)
                 .order("name");
 
@@ -247,13 +248,17 @@ const SalesNew = () => {
              return;
          }
 
+         // Puxar comissão do cadastro do funcionário
+         const commissionPercentage = employee.commission_percentage || 1;
+
          const newEmployees = [...(currentItem.employees || []), { 
              employee_id: currentEmployeeId, 
              employee_name: employee.name,
-             commission_type: currentEmpCommissionType,
-             commission_value: currentEmpCommissionValue,
+             commission_type: "percentual",
+             commission_value: commissionPercentage,
          }];
 
+         console.log("Adicionando colaborador. newEmployees:", newEmployees);
          setCurrentItem({
              ...currentItem,
              employees: newEmployees,
@@ -262,13 +267,21 @@ const SalesNew = () => {
          setCurrentEmployeeId("");
          setCurrentEmpCommissionType("percentual");
          setCurrentEmpCommissionValue(1);
-         toast({ title: "Colaborador adicionado", description: `${employee.name} - Comissão: ${currentEmpCommissionType === "percentual" ? currentEmpCommissionValue + "%" : "R$ " + currentEmpCommissionValue.toFixed(2)}` });
+         toast({ title: "Colaborador adicionado", description: `${employee.name} - Comissão: ${commissionPercentage}% (do cadastro)` });
      };
 
     // Add item to sale
     const handleAddItem = () => {
-        if (!currentItem.product_id || !currentItem.employees || currentItem.employees.length === 0) {
-            toast({ title: "Selecione produto e pelo menos um colaborador", variant: "destructive" });
+        console.log("handleAddItem called. currentItem:", currentItem);
+        
+        if (!currentItem.product_id) {
+            toast({ title: "Selecione um produto", variant: "destructive" });
+            return;
+        }
+
+        if (!currentItem.employees || currentItem.employees.length === 0) {
+            console.log("Sem colaboradores! employees:", currentItem.employees);
+            toast({ title: "Adicione pelo menos um colaborador ao produto", variant: "destructive" });
             return;
         }
 
@@ -311,7 +324,7 @@ const SalesNew = () => {
          ]);
 
          // Reset current item
-         setCurrentItem({ product_id: "", employees: [], quantity: 1, commission_type: "percentual", commission_value: 1 });
+         setCurrentItem({ product_id: "", employees: [], quantity: 0, commission_type: "percentual", commission_value: 1 });
          setCurrentEmployeeId("");
          toast({ title: "Produto adicionado à venda" });
     };
@@ -587,7 +600,7 @@ const SalesNew = () => {
 
             // Reset form
              setSaleItems([]);
-             setCurrentItem({ product_id: "", employees: [], quantity: 1 });
+              setCurrentItem({ product_id: "", employees: [], quantity: 0 });
              setNotes("");
              setPaymentMethods([{ method: "dinheiro", amount: 0 }]);
              setProductSearch("");
@@ -751,17 +764,21 @@ const SalesNew = () => {
                                              </div>
 
                                             <div>
-                                                <Label htmlFor="quantity">Quantidade *</Label>
-                                                <Input
-                                                    id="quantity"
-                                                    type="number"
-                                                    min="1"
-                                                    value={currentItem.quantity || 1}
-                                                    onChange={(e) =>
-                                                        setCurrentItem({ ...currentItem, quantity: Number(e.target.value) || 1 })
-                                                    }
-                                                />
-                                            </div>
+                                                 <Label htmlFor="quantity">Quantidade *</Label>
+                                                 <Input
+                                                     id="quantity"
+                                                     type="number"
+                                                     placeholder="Digite a quantidade"
+                                                     value={currentItem.quantity === undefined || currentItem.quantity === 0 ? "" : currentItem.quantity}
+                                                     onChange={(e) => {
+                                                         const val = e.target.value;
+                                                         setCurrentItem({ ...currentItem, quantity: val === "" ? undefined : Number(val) });
+                                                     }}
+                                                 />
+                                                 {!currentItem.quantity && (
+                                                     <p className="text-xs text-orange-600 mt-1">⚠️ Preencha a quantidade antes de adicionar o produto</p>
+                                                 )}
+                                             </div>
                                         </div>
 
                                         {currentItem.product_id && (
@@ -849,35 +866,15 @@ const SalesNew = () => {
                                                     </div>
 
                                                     {currentEmployeeId && (
-                                                        <div>
-                                                            <Label className="font-semibold text-blue-600 mb-2 block">Comissão deste colaborador</Label>
-                                                            <div className="grid grid-cols-2 gap-2">
-                                                                <div>
-                                                                    <Label htmlFor="emp-comm-type">Tipo</Label>
-                                                                    <Select value={currentEmpCommissionType} onValueChange={setCurrentEmpCommissionType}>
-                                                                        <SelectTrigger>
-                                                                            <SelectValue />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            <SelectItem value="percentual">%</SelectItem>
-                                                                            <SelectItem value="fixo">R$</SelectItem>
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </div>
-                                                                <div>
-                                                                    <Label htmlFor="emp-comm-value">Valor</Label>
-                                                                    <Input
-                                                                        id="emp-comm-value"
-                                                                        type="number"
-                                                                        step="0.01"
-                                                                        placeholder={currentEmpCommissionType === "percentual" ? "1" : "5.00"}
-                                                                        value={currentEmpCommissionValue}
-                                                                        onChange={(e) => setCurrentEmpCommissionValue(parseFloat(e.target.value) || 1)}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )}
+                                                         <div className="p-3 bg-blue-50 rounded border border-blue-200">
+                                                             <p className="text-xs text-blue-900">
+                                                                 <span className="font-semibold">Comissão automática:</span> Será usada a comissão cadastrada do colaborador
+                                                             </p>
+                                                             <p className="text-xs text-blue-800 mt-1">
+                                                                 Comissão: {employees.find(e => e.id === currentEmployeeId)?.commission_percentage || 1}%
+                                                             </p>
+                                                         </div>
+                                                     )}
 
                                                     <Button onClick={handleAddEmployeeToItem} className="w-full gap-1">
                                                         <Plus className="w-4 h-4" />
@@ -887,60 +884,15 @@ const SalesNew = () => {
                                             </div>
                                         </div>
 
-                                        {/* Comissão do Produto */}
-                                        <div className="border-t pt-4">
-                                            <Label className="font-semibold text-primary mb-3 block">💰 COMISSÃO</Label>
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <div>
-                                                    <Label htmlFor="commission-type">Tipo *</Label>
-                                                    <Select 
-                                                        value={currentItem.commission_type || "percentual"} 
-                                                        onValueChange={(value) => setCurrentItem({ ...currentItem, commission_type: value })}
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="percentual">% Porcentagem</SelectItem>
-                                                            <SelectItem value="fixo">R$ Valor Fixo</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div>
-                                                    <Label htmlFor="commission-value">Valor *</Label>
-                                                    <Input
-                                                        id="commission-value"
-                                                        type="number"
-                                                        step="0.01"
-                                                        placeholder={currentItem.commission_type === "percentual" ? "1" : "5.00"}
-                                                        value={currentItem.commission_value || 1}
-                                                        onChange={(e) =>
-                                                            setCurrentItem({ ...currentItem, commission_value: parseFloat(e.target.value) || 1 })
-                                                        }
-                                                    />
-                                                </div>
-                                            </div>
-                                            {currentItem.quantity && currentItem.unit_price && (
-                                                (() => {
-                                                    const subtotal = currentItem.quantity * (currentItem.unit_price || 0);
-                                                    const commType = currentItem.commission_type || "percentual";
-                                                    const commValue = currentItem.commission_value || 1;
-                                                    const commCalculated = commType === "percentual" ? (subtotal * commValue) / 100 : commValue;
-                                                    return (
-                                                        <div className="mt-3 p-2 bg-primary/10 rounded border border-primary/20 text-sm">
-                                                            <p className="text-muted-foreground">
-                                                                Comissão: <span className="font-bold text-primary">R$ {commCalculated.toFixed(2)}</span>
-                                                            </p>
-                                                        </div>
-                                                    );
-                                                })()
-                                            )}
-                                        </div>
-                                    </div>
+</div>
 
-                                    <Button onClick={handleAddItem} variant="outline" className="w-full mt-4 gap-2">
-                                        <Plus className="w-4 h-4" />
-                                        Adicionar Produto à Venda
+                                    <Button 
+                                        onClick={handleAddItem}
+                                        disabled={!currentItem.product_id || !currentItem.employees || currentItem.employees.length === 0 || !currentItem.quantity || !currentItem.unit_price}
+                                        className="w-full mt-6 gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold text-lg py-6 rounded-lg shadow-lg hover:shadow-xl transition-all"
+                                    >
+                                         <Plus className="w-6 h-6" />
+                                         Adicionar Produto à Venda
                                     </Button>
                                 </div>
 

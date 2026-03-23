@@ -17,6 +17,7 @@ import { FinancialAuthModal } from "@/components/FinancialAuthModal";
 import { ProductDocumentsTab } from "@/components/ProductDocumentsTab";
 import { RearrangeProductModal } from "@/components/RearrangeProductModal";
 import { StoreCashBox } from "@/components/StoreCashBox";
+import { AuthRestrictedModal } from "@/components/AuthRestrictedModal";
 
 interface Employee {
   id: string;
@@ -26,6 +27,7 @@ interface Employee {
   email: string;
   hire_date: string;
   salary?: number;
+  commission_percentage?: number;
   active: boolean;
   sales_count?: number;
   attendance_count?: number;
@@ -76,11 +78,13 @@ const AdminPanel = () => {
      const [loading, setLoading] = useState(true);
      const { toast } = useToast();
      const [dialogOpen, setDialogOpen] = useState(false);
-     const [empForm, setEmpForm] = useState({ name: "", role: "", phone: "", email: "", salary: "1600", password: "" });
+     const [empForm, setEmpForm] = useState({ name: "", role: "", phone: "", email: "", salary: "1600", commission_percentage: "0", password: "" });
      const [submitting, setSubmitting] = useState(false);
      const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
      const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
      const [empToDelete, setEmpToDelete] = useState<Employee | null>(null);
+     const [employeesAuthOpen, setEmployeesAuthOpen] = useState(false);
+     const [employeesAuthenticated, setEmployeesAuthenticated] = useState(false);
      const [invDialogOpen, setInvDialogOpen] = useState(false);
      const [invForm, setInvForm] = useState({ name: "", category: "", quantity: "", minQuantity: "", price: "", supplier: "", store: "", costPrice: "", code: "", description: "" });
      const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -121,6 +125,7 @@ const AdminPanel = () => {
                   email: emp.email,
                   hire_date: emp.hire_date,
                   salary: emp.salary,
+                  commission_percentage: emp.commission_percentage,
                   active: emp.active || true,
                 }));
                 setEmployees(mappedEmployees);
@@ -268,6 +273,7 @@ const AdminPanel = () => {
                         phone: empForm.phone,
                         email: empForm.email,
                         salary: parseFloat(empForm.salary) || 1600,
+                        commission_percentage: parseFloat(empForm.commission_percentage) || 0,
                     })
                     .eq("id", editingEmp.id);
 
@@ -337,6 +343,7 @@ const AdminPanel = () => {
                        phone: empForm.phone,
                        email: empForm.email,
                        salary: parseFloat(empForm.salary) || 1600,
+                       commission_percentage: parseFloat(empForm.commission_percentage) || 0,
                        hire_date: new Date().toISOString().split("T")[0],
                        active: true,
                    });
@@ -398,7 +405,7 @@ const AdminPanel = () => {
                }
             }
 
-            setEmpForm({ name: "", role: "", phone: "", email: "", salary: "1600", password: "" });
+            setEmpForm({ name: "", role: "", phone: "", email: "", salary: "1600", commission_percentage: "0", password: "" });
             setEditingEmp(null);
             setDialogOpen(false);
             
@@ -429,6 +436,7 @@ const AdminPanel = () => {
         phone: emp.phone || "",
         email: emp.email || "",
         salary: emp.salary?.toString() || "",
+        commission_percentage: emp.commission_percentage?.toString() || "0",
         password: "", // Deixa vazio para edição (será preenchido apenas se quiser alterar)
       });
       setDialogOpen(true);
@@ -893,11 +901,11 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
               <div className="flex gap-2 border-b border-border min-w-max">
                 <button
                   onClick={() => {
-                    // Limpar autenticação ao sair da aba Financeiro
-                    sessionStorage.removeItem("financial_auth");
-                    sessionStorage.removeItem("financial_auth_time");
-                    setFinancialAuthenticated(false);
-                    setActiveTab("employees");
+                    if (employeesAuthenticated) {
+                      setActiveTab("employees");
+                    } else {
+                      setEmployeesAuthOpen(true);
+                    }
                   }}
                   className={cn(
                     "px-3 md:px-4 py-2 font-medium border-b-2 transition-colors text-sm md:text-base whitespace-nowrap",
@@ -906,7 +914,7 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  Funcionários
+                  Funcionários 🔒
                 </button>
                 <button
                   onClick={() => {
@@ -1233,7 +1241,21 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
                                              autoComplete="off"
                                          />
                                         </div>
-                                    <Button
+                                        <div className="col-span-2">
+                                         <Label>Comissão (%)</Label>
+                                         <Input
+                                             type="number"
+                                             step="0.01"
+                                             min="0"
+                                             max="100"
+                                             value={empForm.commission_percentage}
+                                             onChange={(e) => setEmpForm({ ...empForm, commission_percentage: e.target.value })}
+                                             placeholder="0"
+                                             autoComplete="off"
+                                         />
+                                         <p className="text-xs text-muted-foreground mt-1">Percentual padrão de comissão sobre vendas - será puxado automaticamente ao registrar vendas</p>
+                                        </div>
+                                        <Button
                                         onClick={handleAddEmployee}
                                         disabled={submitting}
                                         className="w-full gradient-primary text-primary-foreground font-semibold"
@@ -3012,6 +3034,22 @@ const stores = ["Loja 1", "Loja 2", "Loja 3"];
          <SalesCommissionsTab />
          )}
          
+         {/* Employees Authentication Modal */}
+         <AuthRestrictedModal
+           isOpen={employeesAuthOpen}
+           onAuthSuccess={() => {
+             setEmployeesAuthOpen(false);
+             setEmployeesAuthenticated(true);
+             setActiveTab("employees");
+           }}
+           onClose={() => {
+             setEmployeesAuthOpen(false);
+           }}
+           title="Funcionários"
+           description="Esta aba requer autenticação. Digite a senha para continuar."
+           validPassword="financeiro2026@"
+         />
+
          {/* Financial Authentication Modal */}
          <FinancialAuthModal
            isOpen={financialAuthOpen}

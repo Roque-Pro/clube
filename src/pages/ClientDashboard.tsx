@@ -16,21 +16,35 @@ import FreeTrocasCard from "@/components/FreeTrocasCard";
 import PlanPaymentModal from "@/components/PlanPaymentModal";
 import PlanPromotionCard from "@/components/PlanPromotionCard";
 import ClientStatusBadge from "@/components/ClientStatusBadge";
+import { BulkVehicleUpload } from "@/components/BulkVehicleUpload";
+
+// Helper function para calcular status do plano
+const getPlanStatus = (planActive: boolean, planEnd?: string): "free" | "active" | "expired" => {
+    if (!planActive) return "free";
+    
+    if (planEnd) {
+        const endDate = new Date(planEnd);
+        const today = new Date();
+        if (endDate < today) return "expired";
+    }
+    
+    return "active";
+};
 
 interface ClientProfile {
-    id?: string;
-    name: string;
-    email: string;
-    phone: string;
-    cpf: string;
-    vehicle: string;
-    plate: string;
-    replacements_used?: number;
-    max_replacements?: number;
-    plan_status?: "free" | "active" | "expired";
-    plan_paid_at?: string;
-    plan_start?: string;
-    plan_end?: string;
+     id?: string;
+     name: string;
+     email: string;
+     phone: string;
+     cpf: string;
+     vehicle: string;
+     plate: string;
+     replacements_used?: number;
+     max_replacements?: number;
+     plan_active?: boolean;
+     plan_paid_at?: string;
+     plan_start?: string;
+     plan_end?: string;
 }
 
 interface ClientVehicle {
@@ -98,6 +112,7 @@ const ClientDashboard = () => {
     const [submittingEditAppointment, setSubmittingEditAppointment] = useState(false);
     const [confirmingChangedAppointmentId, setConfirmingChangedAppointmentId] = useState<string | null>(null);
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+    const [bulkUploadEnabled, setBulkUploadEnabled] = useState(false);
 
     const replacementItems = ["Para-brisa", "Retrovisor", "Vigia", "Farol", "Janela", "Porta", "Óculos", "Insumo", "Ferramenta", "Outro"];
 
@@ -176,6 +191,7 @@ const ClientDashboard = () => {
                     console.log("✅ Cliente encontrado por user_id:", data);
                     setClientData(data);
                     setFormData(data);
+                    setBulkUploadEnabled(data.bulk_upload_enabled || false);
                     // Fetch appointments and vehicles for this client
                     fetchAppointments(data.id);
                     fetchClientVehicles(data.id);
@@ -193,6 +209,7 @@ const ClientDashboard = () => {
                         console.log("✅ Cliente encontrado por email:", emailData);
                         setClientData(emailData);
                         setFormData(emailData);
+                        setBulkUploadEnabled(emailData.bulk_upload_enabled || false);
                         fetchAppointments(emailData.id);
                         fetchClientVehicles(emailData.id);
                     } else {
@@ -600,7 +617,7 @@ const ClientDashboard = () => {
                             </h2>
                             {clientData && (
                                 <ClientStatusBadge
-                                    planStatus={clientData.plan_status || "free"}
+                                    planStatus={getPlanStatus(clientData.plan_active ?? false, clientData.plan_end)}
                                     size="md"
                                 />
                             )}
@@ -613,7 +630,7 @@ const ClientDashboard = () => {
                     {/* Plan Status Card - Replaced old card */}
                      {clientData && (
                          <PlanStatusCard
-                             planStatus={clientData.plan_status || "free"}
+                             planStatus={getPlanStatus(clientData.plan_active ?? false, clientData.plan_end)}
                              planPaidAt={clientData.plan_paid_at}
                              planEnd={clientData.plan_end}
                              onPaymentClick={() => setPaymentModalOpen(true)}
@@ -624,7 +641,7 @@ const ClientDashboard = () => {
                      {/* Plan Promotion Card */}
                      {clientData && (
                          <PlanPromotionCard
-                             planStatus={clientData.plan_status || "free"}
+                             planStatus={getPlanStatus(clientData.plan_active ?? false, clientData.plan_end)}
                          />
                      )}
 
@@ -633,7 +650,7 @@ const ClientDashboard = () => {
                         <FreeTrocasCard
                             replacementsUsed={clientData.replacements_used || 0}
                             maxReplacements={clientData.max_replacements || 3}
-                            planStatus={clientData.plan_status || "free"}
+                            planStatus={getPlanStatus(clientData.plan_active ?? false, clientData.plan_end)}
                         />
                     )}
 
@@ -941,6 +958,15 @@ const ClientDashboard = () => {
                             )}
                         </div>
                     </motion.div>
+
+                    {/* Bulk Upload Section */}
+                    {bulkUploadEnabled && clientData && (
+                        <BulkVehicleUpload 
+                            clientId={clientData.id!}
+                            isEnabled={bulkUploadEnabled}
+                            onSuccess={() => fetchClientVehicles(clientData.id!)}
+                        />
+                    )}
 
                     {/* Personal Data Section */}
                     <motion.div
