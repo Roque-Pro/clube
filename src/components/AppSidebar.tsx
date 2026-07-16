@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Package, UserCog, History, Shield, LogOut, Settings, ShoppingCart, BarChart3, PieChart, Camera, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Users, Package, UserCog, History, Shield, LogOut, Settings, ShoppingCart, BarChart3, PieChart, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -14,7 +14,6 @@ const AppSidebar = ({ onClose }: AppSidebarProps) => {
   const navItems = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Serviços" },
     { to: "/clientes", icon: Users, label: "Clientes" },
-    { to: "/whatsapp", icon: MessageSquare, label: "Automação Whats" },
     { to: "/estoque", icon: Package, label: "Estoque" },
     { to: "/vendas", icon: ShoppingCart, label: "Vendas" },
     { to: "/analise", icon: BarChart3, label: "Análise" },
