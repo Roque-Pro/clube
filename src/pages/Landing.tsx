@@ -668,6 +668,11 @@ const Landing = () => {
                                     description: "WindowBlue: película de controle solar que reduz calor em até 99%, protege do UV e mantém privacidade com controle de luz",
                                     icon: Hammer,
                                 },
+                                {
+                                    title: "Rastreadores Veiculares",
+                                    description: "Instalação, manutenção e remoção de rastreadores para seguros e cooperativas. Segurança e monitoramento 24 horas para sua frota ou veículo particular.",
+                                    icon: Shield,
+                                },
                             ].map((service, index) => {
                                 const IconComponent = service.icon;
                                 return (
