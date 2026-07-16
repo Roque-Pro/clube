@@ -50,9 +50,10 @@ const Clients = () => {
      const [reportDialogOpen, setReportDialogOpen] = useState(false);
      const [reportPeriod, setReportPeriod] = useState<"week" | "month" | "quarter" | "all">("month");
      const [reportingClient, setReportingClient] = useState<Client | null>(null);
-     const [servicePhotosDialogOpen, setServicePhotosDialogOpen] = useState(false);
-     const [servicePhotos, setServicePhotos] = useState<(File | null)[]>([null, null, null, null, null]);
-     const [uploadingPhotos, setUploadingPhotos] = useState(false);
+      const [servicePhotosDialogOpen, setServicePhotosDialogOpen] = useState(false);
+      const [servicePhotos, setServicePhotos] = useState<(File | null)[]>([null, null, null, null, null]);
+      const [servicePhotoObs, setServicePhotoObs] = useState("");
+      const [uploadingPhotos, setUploadingPhotos] = useState(false);
     const [serviceGalleryOpen, setServiceGalleryOpen] = useState(false);
     const [serviceGalleryImages, setServiceGalleryImages] = useState<{ url: string; ts?: string }[]>([]);
     const [galleryClient, setGalleryClient] = useState<Client | null>(null);
@@ -823,6 +824,7 @@ const Clients = () => {
                         client_id: selectedClient.id,
                         client_name: selectedClient.name,
                         service_type: replForm.item || 'Serviço',
+                        description: servicePhotoObs,
                         service_date: new Date().toISOString().split("T")[0],
                         employee_id: employeeIdToUse,
                         employee_name: employeeNameToUse,
@@ -878,6 +880,7 @@ const Clients = () => {
             await Promise.all([fetchReplacements(), fetchClients()]);
 
             setServicePhotos([null, null, null, null, null]);
+            setServicePhotoObs("");
             setServicePhotosDialogOpen(false);
             // Open gallery immediately so user can see saved images (include timestamp)
             const createdAtForPhotos = (serviceData && serviceData[0] && serviceData[0].created_at) || (replacementData && replacementData[0] && replacementData[0].created_at) || new Date().toISOString();
@@ -1591,6 +1594,16 @@ const Clients = () => {
                                     );
                                 })}
                             </div>
+                        </div>
+
+                        <div>
+                            <Label className="mb-2 block text-sm font-semibold text-foreground">Observação</Label>
+                            <textarea
+                                value={servicePhotoObs}
+                                onChange={(e) => setServicePhotoObs(e.target.value)}
+                                placeholder="Descreva o serviço realizado, peças utilizadas ou observações relevantes..."
+                                className="w-full min-h-[80px] rounded-lg border border-border bg-background px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
                         </div>
 
                         <Button 
