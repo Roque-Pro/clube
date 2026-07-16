@@ -23,6 +23,7 @@ import CanaisIguacu from "./pages/CanaisIguacu";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 import FloatingChat from "./components/FloatingChat";
+import WhatsAppAutomation from "./pages/WhatsAppAutomation";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const AppContent = () => {
           <Route path="/historico" element={<History />} />
           <Route path="/financeiro" element={<Financial />} />
           <Route path="/vistoria" element={<Vistoria />} />
+          <Route path="/whatsapp" element={<WhatsAppAutomation />} />
           <Route path="/admin" element={<AdminPanel />} />
         </Route>
         <Route path="*" element={<NotFound />} />

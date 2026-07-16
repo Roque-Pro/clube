@@ -72,6 +72,10 @@ interface ClientVehicle {
      plan_start?: string;
      plan_end?: string;
      plan_paid_at?: string;
+     pricing_type?: "popular" | "imported" | string;
+     monthly_price?: number;
+     stripe_price_id?: string;
+     free_until?: string;
 }
 
 interface Appointment {
@@ -93,6 +97,29 @@ interface Appointment {
 const normalizeEmail = (value?: string | null) => value?.trim().toLowerCase() || "";
 const normalizeCpf = (value?: string | null) => value?.trim() || "";
 const normalizePlate = (value?: string | null) => value?.trim().toUpperCase() || "";
+
+const getVehicleMonthlyPrice = (vehicle?: ClientVehicle | null, fallback?: number | null) => {
+    const vehiclePrice = Number(vehicle?.monthly_price);
+    if (Number.isFinite(vehiclePrice) && vehiclePrice > 0) return vehiclePrice;
+    return fallback && fallback > 0 ? fallback : 19.9;
+};
+
+const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace(".", ",")}`;
+
+const isVehiclePlanActive = (vehicle: ClientVehicle) =>
+    Boolean(vehicle.plan_active && vehicle.plan_end && new Date(vehicle.plan_end) > new Date());
+
+const isVehicleFreeActive = (vehicle: ClientVehicle) =>
+    Boolean(vehicle.free_until && new Date(vehicle.free_until) > new Date());
+
+const isVehicleEligibleForAppointment = (vehicle: ClientVehicle) =>
+    isVehiclePlanActive(vehicle) || isVehicleFreeActive(vehicle);
+
+const getFreeDaysRemaining = (freeUntil?: string) => {
+    if (!freeUntil) return 0;
+    const diff = new Date(freeUntil).getTime() - new Date().getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+};
 
 const ClientDashboard = () => {
     const navigate = useNavigate();
@@ -180,6 +207,8 @@ const ClientDashboard = () => {
     const activeVehiclePlans = clientVehicles
         .filter((vehicle) => vehicle.plan_active && vehicle.plan_end && new Date(vehicle.plan_end) > new Date())
         .sort((a, b) => (b.plan_end || "").localeCompare(a.plan_end || ""));
+    const appointmentEligibleVehicles = clientVehicles.filter(isVehicleEligibleForAppointment);
+    const hasAppointmentEligibleVehicle = appointmentEligibleVehicles.length > 0;
     const latestActiveVehiclePlan = activeVehiclePlans[0];
     const hasActiveVehiclePlan = activeVehiclePlans.length > 0;
     const effectivePlanActive = hasActiveVehiclePlan;
@@ -192,6 +221,8 @@ const ClientDashboard = () => {
 
     const isPendingApproval = clientData?.profile_status === "pending" || 
                              clientVehicles.some(v => v.status === "pending");
+    const selectedPaymentVehicle = clientVehicles.find((vehicle) => vehicle.id === selectedVehicleForPayment) || null;
+    const selectedPaymentMonthlyPrice = getVehicleMonthlyPrice(selectedPaymentVehicle, clientData?.value_per_car);
 
     const handlePaymentClick = (vehicleId: string) => {
         setSelectedVehicleForPayment(vehicleId);
@@ -200,12 +231,24 @@ const ClientDashboard = () => {
 
     const handleConfirmPayment = async () => {
         if (!clientData?.id || !selectedVehicleForPayment) return;
+        const vehicleToPay = clientVehicles.find((vehicle) => vehicle.id === selectedVehicleForPayment);
+        const stripePriceId = vehicleToPay?.stripe_price_id || null;
+
+        if (!stripePriceId) {
+            toast({
+                title: "Pagamento indisponível",
+                description: "Este valor ainda não possui um produto na Stripe configurado. Entre em contato conosco.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         setIsProcessingPayment(true);
         try {
             const { data, error } = await supabase.functions.invoke("create-stripe-checkout", {
                 body: {
                     vehicleId: selectedVehicleForPayment,
-                    priceId: "price_1TgAzbCnvLpXfmPcAj0OIXUH",
+                    priceId: stripePriceId,
                     successUrl: window.location.origin + "/client-dashboard?payment=success",
                     cancelUrl: window.location.origin + "/client-dashboard?payment=cancel",
                 },
@@ -787,6 +830,12 @@ const ClientDashboard = () => {
             return;
         }
 
+        const selectedAppointmentVehicle = clientVehicles.find((vehicle) => vehicle.id === appointmentForm.vehicle_id);
+        if (!selectedAppointmentVehicle || !isVehicleEligibleForAppointment(selectedAppointmentVehicle)) {
+            toast({ title: "Selecione um veículo pago ou dentro do período grátis", variant: "destructive" });
+            return;
+        }
+
         // Check if client has reached appointment limit (only count active appointments)
         const appointmentsThisYear = appointments.filter((apt) => {
             const aptYear = new Date(apt.scheduled_date).getFullYear();
@@ -1196,7 +1245,7 @@ const ClientDashboard = () => {
                                 <div>
                                     <h4 className="text-xl font-bold text-foreground">Ativação</h4>
                                     <p className="text-lg text-muted-foreground leading-relaxed">
-                                        Após aprovado, ative a mensalidade de <strong className="text-primary">R$ {(clientData?.value_per_car && clientData.value_per_car > 0) ? clientData.value_per_car.toFixed(2).replace('.', ',') : '19,90'}</strong> por veículo.
+                                        Após aprovado, ative a mensalidade do seu veículo (de <strong className="text-primary">R$ 19,90</strong> a <strong className="text-primary">R$ 99,90</strong>) conforme definido pela empresa.
                                     </p>
                                 </div>
                             </div>
@@ -1373,17 +1422,17 @@ const ClientDashboard = () => {
 
                         {/* STEP 2: PAGAMENTO */}
                         <div className={`p-8 rounded-2xl border-2 transition-all ${
-                            clientVehicles.some(v => v.plan_active && v.plan_end && new Date(v.plan_end) > new Date()) 
+                            hasAppointmentEligibleVehicle
                                 ? "border-green-500 bg-green-50/50 dark:bg-green-950/10" 
                                 : "border-border bg-card"
                         } ${!clientVehicles.some(v => v.status === "approved") ? "opacity-50 grayscale pointer-events-none" : ""}`}>
                             <div className="flex items-start gap-6 mb-6">
                                 <div className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl ${
-                                    clientVehicles.some(v => v.plan_active && v.plan_end && new Date(v.plan_end) > new Date())
+                                    hasAppointmentEligibleVehicle
                                         ? "bg-green-500 text-white"
                                         : "bg-primary text-white"
                                 }`}>
-                                    {clientVehicles.some(v => v.plan_active && v.plan_end && new Date(v.plan_end) > new Date()) ? <Check className="w-8 h-8" /> : "2"}
+                                    {hasAppointmentEligibleVehicle ? <Check className="w-8 h-8" /> : "2"}
                                 </div>
                                 <div>
                                     <h3 className="text-2xl font-bold">Passo 2: Pagamento por Veículo</h3>
@@ -1397,14 +1446,20 @@ const ClientDashboard = () => {
                                 {clientVehicles.filter(v => v.status === "approved").map(vehicle => {
                                     const vPlanEnd = vehicle.plan_end ? new Date(vehicle.plan_end) : null;
                                     const vExpired = vPlanEnd && new Date() > vPlanEnd;
-                                    const vActive = vehicle.plan_active && !vExpired;
+                                    const vActive = isVehiclePlanActive(vehicle);
+                                    const freeDaysRemaining = getFreeDaysRemaining(vehicle.free_until);
+                                    const vFreeActive = isVehicleFreeActive(vehicle);
+                                    const vehiclePrice = getVehicleMonthlyPrice(vehicle, clientData?.value_per_car);
 
                                     return (
-                                        <div key={vehicle.id} className={`p-4 rounded-xl border-2 flex items-center justify-between ${vActive ? "border-green-200 bg-green-50/30" : vExpired ? "border-red-200 bg-red-50/30" : "border-border bg-muted/20"}`}>
+                                        <div key={vehicle.id} className={`p-4 rounded-xl border-2 flex items-center justify-between ${vActive || vFreeActive ? "border-green-200 bg-green-50/30" : vExpired ? "border-red-200 bg-red-50/30" : "border-border bg-muted/20"}`}>
                                             <div className="min-w-0">
                                                 <p className="font-bold text-sm truncate">{vehicle.vehicle}</p>
-                                                <p className={`text-[10px] font-bold uppercase ${vActive ? "text-green-600" : vExpired ? "text-red-600" : "text-muted-foreground"}`}>
-                                                    {vActive ? "✓ Pago" : vExpired ? "⚠ Expirado" : "○ Pendente"}
+                                                <p className="text-xs text-muted-foreground">
+                                                    {formatCurrency(vehiclePrice)}/mês
+                                                </p>
+                                                <p className={`text-[10px] font-bold uppercase ${vActive || vFreeActive ? "text-green-600" : vExpired ? "text-red-600" : "text-muted-foreground"}`}>
+                                                    {vActive ? "Pago" : vFreeActive ? `Grátis por ${freeDaysRemaining} dia${freeDaysRemaining === 1 ? "" : "s"}` : vExpired ? "Expirado" : "Pendente"}
                                                 </p>
                                             </div>
                                             {!vActive && (
@@ -1420,7 +1475,7 @@ const ClientDashboard = () => {
 
                         {/* STEP 3: AGENDAMENTO */}
                         <div className={`p-8 rounded-2xl border-2 transition-all border-blue-500 bg-blue-50/50 dark:bg-blue-950/10 ${
-                            !clientVehicles.some(v => v.plan_active && v.plan_end && new Date(v.plan_end) > new Date()) ? "opacity-50 grayscale pointer-events-none" : ""
+                            !hasAppointmentEligibleVehicle ? "opacity-50 grayscale pointer-events-none" : ""
                         }`}>
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                 <div className="flex items-center gap-6">
@@ -1430,7 +1485,7 @@ const ClientDashboard = () => {
                                     <div>
                                         <h3 className="text-2xl font-bold">Passo 3: Agendar Serviço</h3>
                                         <p className="text-base text-muted-foreground">
-                                            Selecione um veículo com plano ativo para agendar.
+                                            Selecione um veículo com plano ativo ou dentro do período grátis para agendar.
                                         </p>
                                     </div>
                                 </div>
@@ -1447,12 +1502,14 @@ const ClientDashboard = () => {
                                         </DialogHeader>
                                         <div className="space-y-4">
                                             <div>
-                                                <Label>Veículo (Apenas pagos e ativos) *</Label>
+                                                <Label>Veículo (Pago ou em gratuidade) *</Label>
                                                 <Select value={appointmentForm.vehicle_id} onValueChange={(v) => setAppointmentForm({ ...appointmentForm, vehicle_id: v })}>
-                                                    <SelectTrigger><SelectValue placeholder="Selecione um veículo pago..." /></SelectTrigger>
+                                                    <SelectTrigger><SelectValue placeholder="Selecione um veículo liberado..." /></SelectTrigger>
                                                     <SelectContent>
-                                                        {clientVehicles.filter(v => v.plan_active && v.plan_end && new Date(v.plan_end) > new Date()).map((vehicle) => (
-                                                            <SelectItem key={vehicle.id} value={vehicle.id}>{vehicle.vehicle} - {vehicle.plate}</SelectItem>
+                                                        {appointmentEligibleVehicles.map((vehicle) => (
+                                                            <SelectItem key={vehicle.id} value={vehicle.id}>
+                                                                {vehicle.vehicle} - {vehicle.plate}{isVehicleFreeActive(vehicle) ? ` (${getFreeDaysRemaining(vehicle.free_until)} dias grátis)` : ""}
+                                                            </SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
@@ -1975,7 +2032,7 @@ const ClientDashboard = () => {
                         onPaymentClick={handleConfirmPayment}
                         isLoading={isProcessingPayment}
                         clientName={clientData?.name}
-                        valuePerCar={19.90}
+                        valuePerCar={selectedPaymentMonthlyPrice}
                     />
                 </motion.div>
             </main>

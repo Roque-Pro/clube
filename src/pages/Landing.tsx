@@ -882,7 +882,7 @@ const Landing = () => {
                                             <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                                                 <Check className="w-4 h-4 text-blue-600" />
                                             </div>
-                                            <span className="text-sm text-gray-700">Suporte 24/7 dedicado</span>
+                                            <span className="text-sm text-gray-700">Atendimento em horário comercial</span>
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">

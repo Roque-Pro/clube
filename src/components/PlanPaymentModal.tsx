@@ -38,12 +38,12 @@ const PlanPaymentModal = ({
         {
             icon: Zap,
             title: "3 Trocas Anuais",
-            description: "Grátis: vidros, faróis, janelas e componentes",
+            description: "Garantida: vidros, faróis, janelas e componentes",
         },
         {
             icon: Clock,
-            title: "Suporte 24/7",
-            description: "Assistência dedicada em emergências",
+            title: "Horário Comercial",
+            description: "Atendimento de segunda a sábado",
         },
         {
             icon: Shield,

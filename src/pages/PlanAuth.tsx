@@ -227,7 +227,7 @@ const PlanAuth = () => {
               </div>
               <div className="flex items-start gap-3">
                 <Check className="w-4 h-4 text-success flex-shrink-0 mt-1" />
-                <span className="text-sm text-muted-foreground"><strong>Assistência 24/7</strong> para emergências</span>
+                <span className="text-sm text-muted-foreground"><strong>Atendimento em horário comercial</strong> de segunda a sábado</span>
               </div>
               <div className="flex items-start gap-3">
                 <Check className="w-4 h-4 text-success flex-shrink-0 mt-1" />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, UserCheck, UserX, Repeat, Edit2, Eye, Upload, FileText, Car, Shield, Camera, X } from "lucide-react";
+import { Plus, Search, UserCheck, UserX, Repeat, Edit2, Eye, Upload, FileText, Car, Shield, Camera, X, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import ClientStatusBadge from "@/components/ClientStatusBadge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ const getPlanStatus = (planActive: boolean, planEnd?: string): "free" | "active"
 };
 
 const Clients = () => {
+     const navigate = useNavigate();
      const [clients, setClients] = useState<Client[]>([]);
      const [employees, setEmployees] = useState<any[]>([]);
      const [replacements, setReplacements] = useState<Replacement[]>([]);
@@ -962,39 +964,48 @@ const Clients = () => {
                 title="Clientes"
                 description="Gestão de clientes e planos do Clube do Vidro"
                 actions={
-                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="gradient-primary text-primary-foreground font-semibold gap-2 glow-primary">
-                                <Plus className="w-4 h-4" /> Novo Cliente
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="bg-card border-border">
-                            <DialogHeader>
-                                <DialogTitle className="font-display">Cadastrar Cliente</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nome completo" /></div>
-                                    <div><Label>Telefone *</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(45) 99999-9999" /></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div><Label>E-mail *</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@exemplo.com" /></div>
-                                    <div><Label>Senha</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Deixar vazio para gerar automaticamente" /></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div><Label>CPF / CNPJ</Label><Input value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} placeholder="Digite o documento" /></div>
-                                    <div><Label>Veículo *</Label><Input value={form.vehicle} onChange={(e) => setForm({ ...form, vehicle: e.target.value })} placeholder="Honda Civic 2022" /></div>
-                                </div>
-                                <div>
-                                    <Label>Placa</Label>
-                                    <Input value={form.plate} onChange={(e) => setForm({ ...form, plate: e.target.value })} placeholder="ABC-1D23" />
-                                </div>
-                                <Button onClick={handleAddClient} disabled={submitting} className="w-full gradient-primary text-primary-foreground font-semibold">
-                                    {submitting ? "Cadastrando..." : "Cadastrar"}
+                    <div className="flex gap-2">
+                        <Button 
+                            variant="outline" 
+                            onClick={() => navigate("/whatsapp")}
+                            className="flex items-center gap-2 border-primary/30 text-foreground hover:bg-primary/10 hover:text-[#2c3493] h-10 px-4"
+                        >
+                            <MessageSquare className="w-4 h-4 text-primary" /> Automação WhatsApp
+                        </Button>
+                        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button className="gradient-primary text-primary-foreground font-semibold gap-2 glow-primary">
+                                    <Plus className="w-4 h-4" /> Novo Cliente
                                 </Button>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
+                            </DialogTrigger>
+                            <DialogContent className="bg-card border-border">
+                                <DialogHeader>
+                                    <DialogTitle className="font-display">Cadastrar Cliente</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nome completo" /></div>
+                                        <div><Label>Telefone *</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(45) 99999-9999" /></div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><Label>E-mail *</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@exemplo.com" /></div>
+                                        <div><Label>Senha</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Deixar vazio para gerar automaticamente" /></div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><Label>CPF / CNPJ</Label><Input value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} placeholder="Digite o documento" /></div>
+                                        <div><Label>Veículo *</Label><Input value={form.vehicle} onChange={(e) => setForm({ ...form, vehicle: e.target.value })} placeholder="Honda Civic 2022" /></div>
+                                    </div>
+                                    <div>
+                                        <Label>Placa</Label>
+                                        <Input value={form.plate} onChange={(e) => setForm({ ...form, plate: e.target.value })} placeholder="ABC-1D23" />
+                                    </div>
+                                    <Button onClick={handleAddClient} disabled={submitting} className="w-full gradient-primary text-primary-foreground font-semibold">
+                                        {submitting ? "Cadastrando..." : "Cadastrar"}
+                                    </Button>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
                 }
             />
 
