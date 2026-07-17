@@ -159,7 +159,7 @@ export const generateClientReport = async (data: ClientReportData) => {
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
     doc.text(
-      `Página ${i} de ${pageCount} - Iguaçu Auto Vidros - Clube do Vidro`,
+      `Página ${i} de ${pageCount} - Iguaçu Auto Vidros - Clube do Parabrisa`,
       pageWidth / 2,
       doc.internal.pageSize.getHeight() - 10,
       { align: "center" }

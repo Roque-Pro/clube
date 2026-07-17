@@ -110,7 +110,7 @@ const Landing = () => {
             bgPosition: "center",
         },
         {
-            title: "CLUBE DO VIDRO",
+            title: "CLUBE DO PARABRISA",
             subtitle: "Iguaçu Auto Vidros",
             description: "Junte-se à nossa comunidade exclusiva de clientes VIP. Receba benefícios especiais, descontos prioritários e atendimento personalizado.",
             image: "💎",

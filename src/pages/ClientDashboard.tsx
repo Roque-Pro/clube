@@ -1214,7 +1214,7 @@ const ClientDashboard = () => {
                                 <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg glow-primary">
                                     <Shield className="w-7 h-7 text-primary-foreground" />
                                 </div>
-                                Jornada do Cliente Clube do Vidro
+                                Jornada do Cliente Clube do Parabrisa
                             </h3>
                         </div>
                         

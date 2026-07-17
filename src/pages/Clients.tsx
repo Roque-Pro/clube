@@ -965,7 +965,7 @@ const Clients = () => {
         <div>
             <PageHeader
                 title="Clientes"
-                description="Gestão de clientes e planos do Clube do Vidro"
+                description="Gestão de clientes e planos do Clube do Parabrisa"
                 actions={
                     <div className="flex gap-2">
                         <Button 
