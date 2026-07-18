@@ -1207,12 +1207,15 @@ const ClientDashboard = () => {
                                     <div className="absolute -top-3 -right-3 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-black text-sm">3</div>
                                     <CalendarCheck className="w-10 h-10 text-primary" />
                                 </div>
-                                <div>
-                                    <h4 className="text-xl font-bold text-foreground">Serviço</h4>
-                                    <p className="text-lg text-muted-foreground leading-relaxed">
-                                        Realize até <strong className="text-primary">3 trocas anuais</strong> inclusas na sua proteção!
-                                    </p>
-                                </div>
+                            <div>
+                                <h4 className="text-xl font-bold text-foreground">Serviço</h4>
+                                <p className="text-lg text-muted-foreground leading-relaxed">
+                                    Realize até <strong className="text-primary">3 trocas anuais</strong> inclusas na sua proteção!
+                                </p>
+                                <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+                                    Em cada serviço é paga uma franquia de <strong className="text-primary">30% do valor da peça</strong>.
+                                </p>
+                            </div>
                             </div>
                         </div>
                     </div>
