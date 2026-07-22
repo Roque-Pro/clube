@@ -742,7 +742,7 @@ const Clients = () => {
         <div>
             <PageHeader
                 title="Clientes"
-                description="Gestão de clientes e planos do Clube do Vidro"
+                description="Gestão de clientes e planos do Clube do Parabrisa"
                 actions={
                     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                         <DialogTrigger asChild>

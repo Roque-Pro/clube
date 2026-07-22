@@ -13,8 +13,8 @@ const Help = () => {
 
   const faqItems: FAQItem[] = [
     {
-      question: "O que é o Clube do Vidro?",
-      answer: "O Clube do Vidro é um programa de proteção para seu veículo que oferece até 3 trocas de vidro por ano. Você paga uma mensalidade fixa de R$ 19,90 e tem acesso a vidros 100% originais, sem carência, com assistência em horário comercial de Segunda a Sábado para emergências. É a solução completa para proteger seu carro contra acidentes com vidros.",
+      question: "O que é o Clube do Parabrisa?",
+      answer: "O Clube do Parabrisa é um programa de proteção para seu veículo que oferece até 3 trocas de vidro por ano. Você paga uma mensalidade fixa de R$ 19,90 e tem acesso a vidros 100% originais, sem carência, com assistência em horário comercial de Segunda a Sábado para emergências. É a solução completa para proteger seu carro contra acidentes com vidros.",
     },
     {
       question: "Como funciona o agendamento de serviço?",
@@ -89,7 +89,7 @@ const Help = () => {
             Central de Ajuda
           </h1>
           <p className="text-xl text-muted-foreground">
-            Tudo que você precisa saber sobre o Clube do Vidro
+            Tudo que você precisa saber sobre o Clube do Parabrisa
           </p>
         </motion.div>
 

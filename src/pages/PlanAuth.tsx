@@ -197,7 +197,7 @@ const PlanAuth = () => {
           <div className="w-16 h-16 rounded-xl gradient-primary flex items-center justify-center glow-primary mx-auto mb-4">
             <Shield className="w-10 h-10 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Clube do Vidro</h1>
+          <h1 className="text-2xl font-display font-bold text-foreground">Clube do Parabrisa</h1>
           <p className="text-sm text-muted-foreground mt-1">Iguaçu Auto Vidros</p>
         </div>
 
@@ -209,7 +209,7 @@ const PlanAuth = () => {
             className="glass-card p-6 mb-6 border border-primary/30"
           >
             <h2 className="text-lg font-display font-bold text-foreground mb-4">
-              Bem-vindo ao Clube do Vidro
+              Bem-vindo ao Clube do Parabrisa
             </h2>
             <div className="mb-6 text-center">
               <p className="text-3xl font-display font-black text-primary mb-2">

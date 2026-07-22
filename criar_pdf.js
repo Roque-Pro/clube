@@ -40,7 +40,7 @@ y += 8;
 
 txt('CLIENTE:', margin, y, 10, true, azul);
 y += 5;
-txt('Iguacu Auto Vidros / Clube do Vidro', margin, y, 9);
+txt('Iguacu Auto Vidros / Clube do Parabrisa', margin, y, 9);
 y += 10;
 
 // LINHA

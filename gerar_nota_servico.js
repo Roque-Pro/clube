@@ -67,7 +67,7 @@ yPos += 8;
 // Cliente
 addText('CLIENTE', margin, yPos, { size: 11, bold: true, color: primaryColor });
 yPos += 7;
-addText('Iguacu Auto Vidros | Clube do Vidro', margin, yPos, { size: 10, bold: true });
+addText('Iguacu Auto Vidros | Clube do Parabrisa', margin, yPos, { size: 10, bold: true });
 yPos += 8;
 
 // Linha de separação
@@ -75,7 +75,7 @@ addLine(yPos);
 yPos += 6;
 
 // Projeto
-addText('PROJETO: Plataforma de Gestão - Clube do Vidro', margin, yPos, { size: 10, bold: true });
+addText('PROJETO: Plataforma de Gestão - Clube do Parabrisa', margin, yPos, { size: 10, bold: true });
 yPos += 7;
 
 const hoje = new Date().toLocaleDateString('pt-BR');

@@ -16,7 +16,7 @@ const CanaisIguacu = () => {
 
   const links = [
     {
-      title: "Clube do Vidro",
+      title: "Clube do Parabrisa",
       description: "Conheça nosso clube exclusivo e benefícios",
       icon: <Globe className="w-6 h-6" />,
       url: "/",

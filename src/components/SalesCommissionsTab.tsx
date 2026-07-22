@@ -319,7 +319,7 @@ export const SalesCommissionsTab = () => {
       doc.setFontSize(18);
       doc.text("COMPROVANTE DE COMISSÃO", pageWidth / 2, 15, { align: "center" });
       doc.setFontSize(10);
-      doc.text("Clube do Vidro - Vidros Automotivos", pageWidth / 2, 22, { align: "center" });
+      doc.text("Clube do Parabrisa - Vidros Automotivos", pageWidth / 2, 22, { align: "center" });
 
       doc.setTextColor(0, 0, 0);
 
