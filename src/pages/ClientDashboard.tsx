@@ -619,10 +619,11 @@ const ClientDashboard = () => {
         reader.readAsDataURL(file);
     };
 
-    const handleValidateAndAddVehicle = async () => {
+    const handleValidateAndAddVehicle = () => {
+        if (!clientData) return false;
         if (!newVehicleForm.vehicle || !newVehicleForm.plate) {
             toast({ title: "Preencha veículo e placa", variant: "destructive" });
-            return;
+            return false;
         }
 
         const skipInspection = (clientData as any)?.skip_inspection;
@@ -634,12 +635,9 @@ const ClientDashboard = () => {
             !newVehicleForm.photoTrunkOpen
         )) {
             toast({ title: "Todas as 11 fotos do veículo são obrigatórias para vistoria", variant: "destructive" });
-            return;
+            return false;
         }
 
-        if (!clientData) return;
-
-        // Aceita o veículo diretamente sem validação de IA
         setValidationResult({ 
             isNational: true, 
             message: "Veículo aceito.", 
@@ -647,6 +645,7 @@ const ClientDashboard = () => {
             model: "N/A", 
             confidence: 1 
         });
+        return true;
     };
 
     const handleConfirmAddVehicle = async () => {
@@ -654,11 +653,7 @@ const ClientDashboard = () => {
         
         const skipInspection = (clientData as any)?.skip_inspection === true;
         
-        // Se não for skipInspection, precisa de validação (mesmo que mockada)
-        if (!skipInspection && !validationResult) {
-            handleValidateAndAddVehicle();
-            return;
-        }
+        if (!skipInspection && !handleValidateAndAddVehicle()) return;
 
         try {
             setUploadingVehiclePhoto(true);
@@ -1299,12 +1294,15 @@ const ClientDashboard = () => {
                                     </div>
                                 </div>
                                 <Dialog open={addVehicleDialogOpen} onOpenChange={setAddVehicleDialogOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button size="lg" className="gap-2 text-lg px-8">
-                                            <Plus className="w-5 h-5" />
-                                            Nova Vistoria
-                                        </Button>
-                                    </DialogTrigger>
+                                    <Button
+                                        size="lg"
+                                        className="gap-2 text-lg px-8"
+                                        type="button"
+                                        onClick={() => setAddVehicleDialogOpen(true)}
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                        Nova Vistoria
+                                    </Button>
                                     <DialogContent className="bg-card border-border max-w-2xl max-h-[90vh] overflow-y-auto">
                                         <DialogHeader>
                                             <DialogTitle className="font-display text-2xl">Nova Vistoria de Veículo</DialogTitle>
@@ -1405,6 +1403,7 @@ const ClientDashboard = () => {
                                             )}
 
                                             <Button
+                                                type="button"
                                                 onClick={handleConfirmAddVehicle}
                                                 disabled={uploadingVehiclePhoto}
                                                 className="w-full h-14 text-lg font-bold gradient-primary shadow-lg shadow-primary/20"
