@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, X, Car, User, Image as ImageIcon, Eye } from "lucide-react";
+import { Check, X, Car, User, Eye } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { logAction } from "@/lib/auditLog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+
+const PRICE_OPTIONS = [
+  19.90, 29.90, 39.90, 49.90, 59.90, 69.90, 79.90, 89.90, 99.90
+];
+const POPULAR_STRIPE_PRICE_ID = "price_1TgAzbCnvLpXfmPcAj0OIXUH";
+const PRICE_STRIPE_MAP: Record<number, string> = {
+  19.90: POPULAR_STRIPE_PRICE_ID,
+  29.90: "price_1TskzhCnvLpXfmPcqvQputfD",
+  39.90: "price_1TskwQCnvLpXfmPcchREvQno",
+  49.90: "price_1Tsl0wCnvLpXfmPcxlqdRtoE",
+  59.90: "price_1Tsl31CnvLpXfmPcO0YR4poj",
+  69.90: "price_1Tsl4KCnvLpXfmPceU2kEeZx",
+  79.90: "price_1Tsl7jCnvLpXfmPcmfHDK3Er",
+  89.90: "price_1Tsl9LCnvLpXfmPcbH7o8fkZ",
+};
 
 interface PendingVehicle {
   id: string;
@@ -49,6 +64,9 @@ export const VistoriaTab = () => {
   const [rejectingVehicle, setRejectingVehicle] = useState<{id: string, name: string} | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [isSubmittingRejection, setIsSubmittingRejection] = useState(false);
+  const [approvingVehicle, setApprovingVehicle] = useState<{id: string, name: string, clientName: string} | null>(null);
+  const [approvalMonthlyPrice, setApprovalMonthlyPrice] = useState(PRICE_OPTIONS[0]);
+  const [approvalFreeMonth, setApprovalFreeMonth] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -162,19 +180,50 @@ export const VistoriaTab = () => {
     fetchData();
   }, []);
 
-  const handleApproveVehicle = async (vehicleId: string, vehicleName: string, clientName: string) => {
+  const openApprovalDialog = (vehicleId: string, vehicleName: string, clientName: string) => {
+    setApprovingVehicle({ id: vehicleId, name: vehicleName, clientName });
+    setApprovalMonthlyPrice(PRICE_OPTIONS[0]);
+    setApprovalFreeMonth(false);
+  };
+
+  const handleApproveVehicle = async () => {
+    if (!approvingVehicle) return;
+
+    const parsedPrice = approvalMonthlyPrice;
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+      toast({ title: "Informe um valor mensal válido", variant: "destructive" });
+      return;
+    }
+
+    const freeUntil = new Date();
+    freeUntil.setMonth(freeUntil.getMonth() + 1);
+
+    const stripePriceId = PRICE_STRIPE_MAP[parsedPrice] || null;
+
     try {
       const { error } = await supabase
         .from("client_vehicles")
-        .update({ status: "approved" })
-        .eq("id", vehicleId);
+        .update({
+          status: "approved",
+          monthly_price: parsedPrice,
+          stripe_price_id: stripePriceId,
+          free_until: approvalFreeMonth ? freeUntil.toISOString().split("T")[0] : null
+        })
+        .eq("id", approvingVehicle.id);
 
       if (error) throw error;
 
-      toast({ title: "Veículo aprovado!", description: `${vehicleName} de ${clientName} agora está ativo.` });
+      toast({ title: "Veículo aprovado!", description: `${approvingVehicle.name} de ${approvingVehicle.clientName} agora está ativo.` });
       
-      await logAction("update", "client_vehicles", vehicleId, vehicleName, `Vistoria aprovada para o veículo de ${clientName}`);
+      await logAction(
+        "update",
+        "client_vehicles",
+        approvingVehicle.id,
+        approvingVehicle.name,
+        `Vistoria aprovada para o veículo de ${approvingVehicle.clientName} por R$ ${parsedPrice.toFixed(2)}${approvalFreeMonth ? " com 1 mês grátis" : ""}`
+      );
       
+      setApprovingVehicle(null);
       fetchData();
     } catch (error: any) {
       toast({ title: "Erro ao aprovar", description: error.message, variant: "destructive" });
@@ -313,7 +362,7 @@ export const VistoriaTab = () => {
                       <Button
                         size="sm"
                         className="flex-1 bg-success hover:bg-success/90 text-success-foreground gap-1"
-                        onClick={() => handleApproveVehicle(v.id, v.vehicle, v.client_name)}
+                        onClick={() => openApprovalDialog(v.id, v.vehicle, v.client_name)}
                       >
                         <Check className="w-4 h-4" /> Aprovar
                       </Button>
@@ -386,6 +435,68 @@ export const VistoriaTab = () => {
           </div>
         )}
       </section>
+
+      {/* Approval Dialog */}
+      <Dialog open={!!approvingVehicle} onOpenChange={(open) => !open && setApprovingVehicle(null)}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-display">Aprovar Vistoria</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Selecione o valor mensal para o veículo de <strong>{approvingVehicle?.clientName}</strong>
+            </p>
+          </DialogHeader>
+          <div className="space-y-5 py-4">
+            <div className="space-y-2">
+              <Label>Valor mensal</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {PRICE_OPTIONS.map((price) => {
+                  const hasStripe = !!PRICE_STRIPE_MAP[price];
+                  return (
+                    <Button
+                      key={price}
+                      type="button"
+                      disabled={!hasStripe}
+                      variant={approvalMonthlyPrice === price ? "default" : "outline"}
+                      onClick={() => setApprovalMonthlyPrice(price)}
+                      className={`h-12 text-base font-bold ${!hasStripe ? "opacity-30 cursor-not-allowed" : ""}`}
+                    >
+                      R$ {price.toFixed(2).replace(".", ",")}
+                    </Button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground text-center mt-1">
+                {PRICE_STRIPE_MAP[approvalMonthlyPrice]
+                  ? "Stripe configurado para este valor"
+                  : "Valor indisponível — cadastre o price ID no código"}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div>
+                <Label htmlFor="approval-free-month">Liberar 1 mês grátis</Label>
+                <p className="text-xs text-muted-foreground">Permite agendamento sem pagamento até o fim do período.</p>
+              </div>
+              <Button
+                id="approval-free-month"
+                type="button"
+                variant={approvalFreeMonth ? "default" : "outline"}
+                onClick={() => setApprovalFreeMonth((value) => !value)}
+              >
+                {approvalFreeMonth ? "Ativo" : "Inativo"}
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApprovingVehicle(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleApproveVehicle}>
+              Confirmar Aprovação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Rejection Dialog */}
       <Dialog open={!!rejectingVehicle} onOpenChange={(open) => !open && setRejectingVehicle(null)}>
