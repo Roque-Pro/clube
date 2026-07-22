@@ -13,12 +13,12 @@ const AppSidebar = ({ onClose }: AppSidebarProps) => {
 
   const navItems = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Serviços" },
+    { to: "/vistoria", icon: Camera, label: "Vistoria" },
     { to: "/clientes", icon: Users, label: "Clientes" },
     { to: "/estoque", icon: Package, label: "Estoque" },
     { to: "/vendas", icon: ShoppingCart, label: "Vendas" },
     { to: "/analise", icon: BarChart3, label: "Análise" },
     { to: "/historico", icon: History, label: "Histórico" },
-    { to: "/vistoria", icon: Camera, label: "Vistoria" },
     { to: "/financeiro", icon: PieChart, label: "Financeiro 🔒" },
     ...(isAdmin ? [{ to: "/admin", icon: Settings, label: "Painel Admin" }] : []),
   ];

@@ -59,7 +59,7 @@ const PlanPaymentModal = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-lg bg-card border-border">
+            <DialogContent className="max-w-lg bg-card border-border w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="font-display text-2xl text-center">
                         Ativar Plano
@@ -79,7 +79,7 @@ const PlanPaymentModal = ({
                             </p>
                             <div className="flex items-baseline justify-center gap-1 mb-2">
                                 <span className="text-4xl font-display font-black text-primary">
-                                    R$ {monthlyPrice.toFixed(2).replace('.', ',')}
+                                    a partir de R$ {monthlyPrice.toFixed(2).replace('.', ',')}
                                 </span>
                                 <span className="text-lg text-muted-foreground">/mês</span>
                             </div>
