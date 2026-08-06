@@ -13,7 +13,7 @@ const PlanPromotionCard = ({ planStatus }: PlanPromotionCardProps) => {
 
     const features = [
         { icon: Zap, text: "3 trocas de vidro/ano" },
-        { icon: Clock, text: "Suporte 24/7" },
+        { icon: Clock, text: "Suporte em horário comercial" },
         { icon: Shield, text: "100% INMETRO" },
     ];
 
@@ -41,7 +41,7 @@ const PlanPromotionCard = ({ planStatus }: PlanPromotionCardProps) => {
                                 Proteção de Vidros para Seu Veículo
                             </h3>
                             <p className="text-sm text-muted-foreground leading-relaxed">
-                                Milhares de clientes já protegem seus veículos com nossa solução. Acesso a 3 trocas completas anualmente com suporte 24/7.
+                                Milhares de clientes já protegem seus veículos com nossa solução. Acesso a 3 trocas completas anualmente com suporte em horário comercial.
                             </p>
                         </div>
                     </div>

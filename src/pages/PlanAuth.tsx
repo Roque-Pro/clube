@@ -213,10 +213,10 @@ const PlanAuth = () => {
             </h2>
             <div className="mb-6 text-center">
               <p className="text-3xl font-display font-black text-primary mb-2">
-                R$ 19,90/mês
+                a partir de R$ 19,90/mês
               </p>
               <p className="text-xs text-muted-foreground">
-                (R$ 239,00/ano)
+                (a partir de R$ 239,00/ano)
               </p>
             </div>
 
@@ -227,7 +227,7 @@ const PlanAuth = () => {
               </div>
               <div className="flex items-start gap-3">
                 <Check className="w-4 h-4 text-success flex-shrink-0 mt-1" />
-                <span className="text-sm text-muted-foreground"><strong>Assistência 24/7</strong> para emergências</span>
+                <span className="text-sm text-muted-foreground"><strong>Assistência em horário comercial</strong> para emergências</span>
               </div>
               <div className="flex items-start gap-3">
                 <Check className="w-4 h-4 text-success flex-shrink-0 mt-1" />

@@ -118,7 +118,7 @@ const PlanStatusCard = ({
                     className="w-full gap-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold"
                 >
                     <DollarSign className="w-4 h-4" />
-                    Renovar Plano - R$ 19,90/mês
+                    Renovar Plano - a partir de R$ 19,90/mês
                 </Button>
             )}
 
@@ -131,7 +131,7 @@ const PlanStatusCard = ({
                         </div>
                         <div className="flex items-center gap-1">
                             <Clock className="w-4 h-4 text-blue-600" />
-                            <span>Suporte 24/7</span>
+                            <span>Suporte em horário comercial</span>
                         </div>
                         <div className="flex items-center gap-1">
                             <Shield className="w-4 h-4 text-purple-600" />
@@ -143,7 +143,7 @@ const PlanStatusCard = ({
                         className="w-full gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold"
                     >
                         <DollarSign className="w-4 h-4" />
-                        Ativar Plano - R$ 19,90/mês
+                        Ativar Plano - a partir de R$ 19,90/mês
                     </Button>
                 </div>
             )}

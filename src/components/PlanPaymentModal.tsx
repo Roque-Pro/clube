@@ -42,7 +42,7 @@ const PlanPaymentModal = ({
         },
         {
             icon: Clock,
-            title: "Suporte 24/7",
+            title: "Suporte em horário comercial",
             description: "Assistência dedicada em emergências",
         },
         {

@@ -24,7 +24,7 @@ const CanaisIguacu = () => {
     },
     {
       title: "Solicitação de Reboque!",
-      description: "Chamar guincho agora (24h)",
+      description: "Chamar guincho agora (horário comercial)",
       icon: <Truck className="w-6 h-6" />,
       url: "https://wa.me/5521974636253",
       isEmergency: true
