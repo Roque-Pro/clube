@@ -1884,7 +1884,8 @@ const ClientDashboard = () => {
                                     />
                                 </div>
 
-                                <div>
+                                {/* Campo Placa oculto: desnecessário na edição e pode induzir ao erro */}
+                                {/* <div>
                                     <Label htmlFor="plate">Placa</Label>
                                     <Input
                                         id="plate"
@@ -1892,7 +1893,7 @@ const ClientDashboard = () => {
                                         onChange={(e) => setFormData({ ...formData, plate: e.target.value })}
                                         placeholder="ABC-1D23"
                                     />
-                                </div>
+                                </div> */}
 
                                 <div className="flex gap-3 pt-4">
                                     <Button
