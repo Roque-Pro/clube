@@ -9,20 +9,7 @@ import { logAction } from "@/lib/auditLog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
-const PRICE_OPTIONS = [
-  19.90, 29.90, 39.90, 49.90, 59.90, 69.90, 79.90, 89.90, 99.90
-];
-const POPULAR_STRIPE_PRICE_ID = "price_1TgAzbCnvLpXfmPcAj0OIXUH";
-const PRICE_STRIPE_MAP: Record<number, string> = {
-  19.90: POPULAR_STRIPE_PRICE_ID,
-  29.90: "price_1TskzhCnvLpXfmPcqvQputfD",
-  39.90: "price_1TskwQCnvLpXfmPcchREvQno",
-  49.90: "price_1Tsl0wCnvLpXfmPcxlqdRtoE",
-  59.90: "price_1Tsl31CnvLpXfmPcO0YR4poj",
-  69.90: "price_1Tsl4KCnvLpXfmPceU2kEeZx",
-  79.90: "price_1Tsl7jCnvLpXfmPcmfHDK3Er",
-  89.90: "price_1Tsl9LCnvLpXfmPcbH7o8fkZ",
-};
+import { PRICE_OPTIONS, PRICE_STRIPE_MAP } from "@/data/stripePrices";
 
 interface PendingVehicle {
   id: string;

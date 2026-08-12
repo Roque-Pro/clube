@@ -26,6 +26,7 @@ import { BulkVehicleUpload } from "@/components/BulkVehicleUpload";
 import PlanStatusCard from "@/components/PlanStatusCard";
 import PlanPaymentModal from "@/components/PlanPaymentModal";
 import PlanPromotionCard from "@/components/PlanPromotionCard";
+import { getStripePriceIdForValue } from "@/data/stripePrices";
 
 interface ClientProfile {
      id?: string;
@@ -231,8 +232,8 @@ const ClientDashboard = () => {
     const handleConfirmPayment = async () => {
         if (!clientData?.id || !selectedVehicleForPayment) return;
         const vehicleToPay = clientVehicles.find((vehicle) => vehicle.id === selectedVehicleForPayment);
-        const stripePriceId = vehicleToPay?.stripe_price_id || null;
-
+        const vehiclePrice = getVehicleMonthlyPrice(vehicleToPay, clientData?.value_per_car);
+        const stripePriceId = vehicleToPay?.stripe_price_id || getStripePriceIdForValue(vehiclePrice);
         if (!stripePriceId) {
             toast({
                 title: "Pagamento indisponível",
@@ -240,6 +241,16 @@ const ClientDashboard = () => {
                 variant: "destructive",
             });
             return;
+        }
+
+        if (vehicleToPay && !vehicleToPay.stripe_price_id) {
+            supabase
+                .from("client_vehicles")
+                .update({ stripe_price_id: stripePriceId })
+                .eq("id", vehicleToPay.id)
+                .then(({ error: updateError }) => {
+                    if (updateError) console.error("Erro ao gravar stripe_price_id:", updateError.message);
+                });
         }
 
         setIsProcessingPayment(true);
